@@ -1,0 +1,908 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+
+{% block head_title %}
+{% if 'AJOUT' not in title %}
+Détails du vol
+{% else %}
+Nouveau vol
+{% endif %}
+{% endblock head_title %}
+
+{% block content %}
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+        <p class="mb-0 msg"><b>{{ message }}</b></p>
+        <button type="button" class="close align-items-center mb-0" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if 'AJOUT' not in title %}
+<div class="d-flex">
+    <div class="mb-2 w-50">
+        <div class="user d-flex flex-row">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
+            </svg>
+            {% if obj.activite == 'OCCASIONNEL' %}
+            <p class="ml-2 text-muted font-weight-normal">Dernière modification effectué par : {{obj.user_last_edit}}</p>
+            {% else %}
+            <p class="ml-2 text-muted font-weight-normal">Compagnie ajouté par : {{obj.user_last_edit}}</p>
+            {% endif %}
+        </div>
+        <div class="time d-flex flex-row">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-fill" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+            </svg>
+            <p class="ml-2 text-muted font-weight-normal">{{obj.solde_last_edit|date:'d F Y - H:i'}}</p>
+        </div>
+    </div>
+    {% if request.user.profile.poste == 'CHEF DEPARTEMENT CONTRAT ET ASSISTANCE AU SOL' %}
+    <div class="form-group ml-auto mt-2">
+        <input type="checkbox" class="form-check-input align-self-center mt-2" id="locked" checked>
+        <label class="form-check-label h3 mr-3 mb-0 align-self-center" for="locked"><b>LOCKED</b></label>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-lock-fill align-self-center mb-2" viewBox="0 0 16 16">
+            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+          </svg>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div id="message" class="mt-2 pb-0 pt-0" style="display: none;">
+    <div id="alert" class="alert alert-danger alert-dismissible fade show" role="alert">
+    </div>
+</div>
+<form method="POST" action="{% url 'core:valid-new-company' %}" class="form">
+    {% csrf_token %}
+    <!-- COMPAGNIE -->
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h3 class="mb-4" style="font-weight: bolder !important;"><b>COMPAGNIE</b></h3>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="date_demande" class="col-form-label">Compagnie</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='company_dispatcher' name="company_dispatcher" placeholder="Compagnie" class="form-control input" required>
+                {% else %}
+                <input type="text" id='company_dispatcher' name="company_dispatcher" value="{{obj.company_dispatcher}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-1">
+                <label for="date_demande" class="col-form-label">Monnaie</label>
+                {% if 'AJOUT' in title %}
+                <select class="custom-select input" name="monnaie" id="monnaie">
+                    {% for p in monnaie %}
+                    {% if p|get_type == "<class 'tuple'>" %}
+                        <option value="{{p}}">{{p.1}}</option>
+                    {% else %}
+                    <option value="{{p}}">{{p}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% else %}
+                <input type="text" id='monnaie' name="monnaie" value="{{obj.monnaie}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="date_demande" class="col-form-label">Activité</label>
+                {% if 'AJOUT' in title %}
+                <select id="activite" class="custom-select input" name="activite" id="activite">
+                    {% for p in activite %}
+                    {% if p|get_type == "<class 'tuple'>" %}
+                        <option value="{{p}}">{{p.1}}</option>
+                    {% else %}
+                    <option value="{{p}}">{{p}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% else %}
+                <input type="text" id='activite' name="activite" value="{{obj.activite}}" class="form-control" required readonly>
+                {% endif %} 
+            </div>
+            <div id="solde_div" class="form-group col-md-3">
+                <label for="date_demande" class="col-form-label">Solde</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.01" id='solde' value="0" name="solde" placeholder="Solde" class="form-control" required>
+                {% else %}
+                {% if obj.activite == 'OCCASIONNEL' %}
+                <input type="number" min="0" step="0.01" id='solde' name="solde" value="{{obj.solde}}" class="form-control" required>
+                {% else %}
+                <p>—</p>
+                {% endif %}
+                {% endif %}
+            </div>
+            <div id="solde_date_div" class="form-group col-md-3">
+                <label for="date_demande" class="col-form-label">Date du solde</label>
+                {% if 'AJOUT' in title %}
+                <input type="date" id="solde_date" name="solde_date" placeholder="Date" class="form-control" required>
+                {% else %}
+                {% if obj.activite == 'OCCASIONNEL' %}
+                <input type="date" id="solde_date" name="solde_date" value="{{obj.solde_date|date:'Y-m-d'}}" class="form-control" required>
+                {% else %}
+                <p>—</p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- FACTURATION -->
+    <div id="fact" class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h3 class="mb-4" style="font-weight: bolder !important;"><b>TARIFS DE LA FACTURATION</b></h3>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>TARIFS DE BASE</b> &nbsp;&nbsp;<span style="color: gray !important;">( USD ) &nbsp;&nbsp; -  &nbsp;&nbsp;Hors taxes</span></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #B01212 !important;">
+        <h6 class='mt-5'><b>TOUCHÉE COMMERCIALE</b> &nbsp;&nbsp;<span style="color: gray !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-1">
+                <label for="MTOW_10_COM" class="col-form-label">MTOW ≤ 10</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_10_COM' name="MTOW_10_COM" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_10_COM' name="MTOW_10_COM" value="{{obj.MTOW_10_COM}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_10_30_COM" class="col-form-label">10 < MTOW ≤ 30</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_10_30_COM' name="MTOW_10_30_COM" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_10_30_COM' name="MTOW_10_30_COM" value="{{obj.MTOW_10_30_COM}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_10_30_COM" class="col-form-label">30 < MTOW ≤ 50</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_30_50_COM' name="MTOW_30_50_COM" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_30_50_COM' name="MTOW_30_50_COM" value="{{obj.MTOW_30_50_COM}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_50_80_COM" class="col-form-label">50 < MTOW ≤ 80</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_50_80_COM' name="MTOW_50_80_COM" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_50_80_COM' name="MTOW_50_80_COM" value="{{obj.MTOW_50_80_COM}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_80_150_COM" class="col-form-label">80 < MTOW ≤ 150</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_80_150_COM' name="MTOW_80_150_COM" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_80_150_COM' name="MTOW_80_150_COM" value="{{obj.MTOW_80_150_COM}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_150_250_COM" class="col-form-label">150 < MTOW ≤ 250</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_150_250_COM' name="MTOW_150_250_COM" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_150_250_COM' name="MTOW_150_250_COM" value="{{obj.MTOW_150_250_COM}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-1">
+                <label for="MTOW_250_COM" class="col-form-label">MTOW < 250</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_250_COM' name="MTOW_250_COM" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_250_COM' name="MTOW_250_COM" value="{{obj.MTOW_250_COM}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <h6 class='mt-5'><b>TOUCHÉE TECHNIQUE</b> &nbsp;&nbsp;<span style="color: gray !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-1">
+                <label for="MTOW_10_TECH" class="col-form-label">MTOW ≤ 10</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_10_TECH' name="MTOW_10_TECH" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_10_TECH' name="MTOW_10_TECH" value="{{obj.MTOW_10_TECH}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_10_30_TECH" class="col-form-label">10 < MTOW ≤ 30</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_10_30_TECH' name="MTOW_10_30_TECH" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_10_30_TECH' name="MTOW_10_30_TECH" value="{{obj.MTOW_10_30_TECH}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_10_30_TECH" class="col-form-label">30 < MTOW ≤ 50</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_30_50_TECH' name="MTOW_30_50_TECH" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_30_50_TECH' name="MTOW_30_50_TECH" value="{{obj.MTOW_30_50_TECH}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_50_80_TECH" class="col-form-label">50 < MTOW ≤ 80</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_50_80_TECH' name="MTOW_50_80_TECH" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_50_80_TECH' name="MTOW_50_80_TECH" value="{{obj.MTOW_50_80_TECH}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_80_150_TECH" class="col-form-label">80 < MTOW ≤ 150</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_80_150_TECH' name="MTOW_80_150_TECH" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_80_150_TECH' name="MTOW_80_150_TECH" value="{{obj.MTOW_80_150_TECH}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="MTOW_150_250_TECH" class="col-form-label">150 < MTOW ≤ 250</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_150_250_TECH' name="MTOW_150_250_TECH" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_150_250_TECH' name="MTOW_150_250_TECH" value="{{obj.MTOW_150_250_TECH}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-1">
+                <label for="MTOW_250_TECH" class="col-form-label">MTOW < 250</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='MTOW_250_TECH' name="MTOW_250_TECH" placeholder="Montant" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='MTOW_250_TECH' name="MTOW_250_TECH" value="{{obj.MTOW_250_TECH}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>PRIX DES SERVICES SPECIALES</b> &nbsp;&nbsp;<span style="color: gray !important;">( USD ) &nbsp;&nbsp; -  &nbsp;&nbsp;Hors taxes</span></h5>
+        <hr class='mt-0' style="height: 4px !important; color: #B01212 !important;">
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="ASSIST_WCH" class="col-form-label">WCH</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ASSIST_WCH' name="ASSIST_WCH" placeholder="PAR PMR" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ASSIST_WCH' name="ASSIST_WCH" value="{{obj.ASSIST_WCH}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ASSIST_UM" class="col-form-label">UM</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ASSIST_UM' name="ASSIST_UM" placeholder="PAR PASSAGER" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ASSIST_UM' name="ASSIST_UM" value="{{obj.ASSIST_UM}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ASSIST_TRANSIT" class="col-form-label"> ASSISTANCE EN TRANSIT</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ASSIST_TRANSIT' name="ASSIST_TRANSIT" placeholder="PAR PASSAGER" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ASSIST_TRANSIT' name="ASSIST_TRANSIT" value="{{obj.ASSIST_TRANSIT}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ACC_SALON" class="col-form-label">ACCES SALON</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ACC_SALON' name="ACC_SALON" placeholder="PAR PASSAGER" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ACC_SALON' name="ACC_SALON" value="{{obj.ACC_SALON}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ASSIST_VIP" class="col-form-label">ASSISTANCE VIP</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ASSIST_VIP' name="ASSIST_VIP" placeholder="PAR PASSAGER" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ASSIST_VIP' name="ASSIST_VIP" value="{{obj.ASSIST_VIP}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="USE_DCS" class="col-form-label">UTILISATION DCS</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='USE_DCS' name="USE_DCS" placeholder="PAR PASSAGER" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='USE_DCS' name="USE_DCS" value="{{obj.USE_DCS}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="DEPORTEE" class="col-form-label">DEPORTEE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='DEPORTEE' name="DEPORTEE" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='DEPORTEE' name="DEPORTEE" value="{{obj.DEPORTEE}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="AGENT_SERV_PASSAGE" class="col-form-label">AGENT DE SERVICE DE PASSAGE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='AGENT_SERV_PASSAGE' name="AGENT_SERV_PASSAGE" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='AGENT_SERV_PASSAGE' name="AGENT_SERV_PASSAGE" value="{{obj.AGENT_SERV_PASSAGE}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="CIVIERE" class="col-form-label">CIVIERE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='CIVIERE' name="CIVIERE" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='CIVIERE' name="CIVIERE" value="{{obj.CIVIERE}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="HUM" class="col-form-label">HUM</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='HUM' name="HUM" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='HUM' name="HUM" value="{{obj.HUM}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="OUV_DOSS_BAG" class="col-form-label">OVERTURE DE DOSSIER BAGAGE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='OUV_DOSS_BAG' name="OUV_DOSS_BAG" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='OUV_DOSS_BAG' name="OUV_DOSS_BAG" value="{{obj.OUV_DOSS_BAG}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="DOSS_VOL_IMP" class="col-form-label">DOSSIER DE VOL & IMPRESSION</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='DOSS_VOL_IMP' name="DOSS_VOL_IMP" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='DOSS_VOL_IMP' name="DOSS_VOL_IMP" value="{{obj.DOSS_VOL_IMP}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="AGENT_COORD" class="col-form-label">AGENT DE COORDINATION</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='AGENT_COORD' name="AGENT_COORD" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='AGENT_COORD' name="AGENT_COORD" value="{{obj.AGENT_COORD}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="COMM_SOL_COCKPIT" class="col-form-label">COMMUNICATION SOL COCKPIT</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='COMM_SOL_COCKPIT' name="COMM_SOL_COCKPIT" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='COMM_SOL_COCKPIT' name="COMM_SOL_COCKPIT" value="{{obj.COMM_SOL_COCKPIT}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="AGENT_OP_QUALIF" class="col-form-label">AGENT D'OP QUALIFIE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='AGENT_OP_QUALIF' name="AGENT_OP_QUALIF" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='AGENT_OP_QUALIF' name="AGENT_OP_QUALIF" value="{{obj.AGENT_OP_QUALIF}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="GPU" class="col-form-label">GPU</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='GPU' name="GPU" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='GPU' name="GPU" value="{{obj.GPU}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ASU_MOY_PORT" class="col-form-label">ASU - MOYEN PORTEUR</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ASU_MOY_PORT' name="ASU_MOY_PORT" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ASU_MOY_PORT' name="ASU_MOY_PORT" value="{{obj.ASU_MOY_PORT}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ASU_BIG_PORT" class="col-form-label">ASU - GROS PORTEUR</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ASU_BIG_PORT' name="ASU_BIG_PORT" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ASU_BIG_PORT' name="ASU_BIG_PORT" value="{{obj.ASU_BIG_PORT}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ACU" class="col-form-label">ACU</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ACU' name="ACU" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ACU' name="ACU" value="{{obj.ACU}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="VIDE_TOILET_MOY_PORT" class="col-form-label">VIDE TOILETTE MOYEN PORTEUR</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='VIDE_TOILET_MOY_PORT' name="VIDE_TOILET_MOY_PORT" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='VIDE_TOILET_MOY_PORT' name="VIDE_TOILET_MOY_PORT" value="{{obj.VIDE_TOILET_MOY_PORT}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="VIDE_TOILET_BIG_PORT" class="col-form-label">VIDE TOILETTE GROS PORTEUR</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='VIDE_TOILET_BIG_PORT' name="VIDE_TOILET_BIG_PORT" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='VIDE_TOILET_BIG_PORT' name="VIDE_TOILET_BIG_PORT" value="{{obj.VIDE_TOILET_BIG_PORT}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-3">
+                <label for="PLEIN_WATER_MOY_PORT" class="col-form-label">PLEIN D'EAU MOYEN PORTEUR</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='PLEIN_WATER_MOY_PORT' name="PLEIN_WATER_MOY_PORT" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='PLEIN_WATER_MOY_PORT' name="PLEIN_WATER_MOY_PORT" value="{{obj.PLEIN_WATER_MOY_PORT}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="PLEIN_WATER_BIG_PORT" class="col-form-label">PLEIN D'EAU GROS PORTEUR</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='PLEIN_WATER_BIG_PORT' name="PLEIN_WATER_BIG_PORT" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='PLEIN_WATER_BIG_PORT' name="PLEIN_WATER_BIG_PORT" value="{{obj.PLEIN_WATER_BIG_PORT}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="NET_CABINE_100" class="col-form-label">NET CABINE (< 100 SIEGES)</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='NET_CABINE_100' name="NET_CABINE_100" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='NET_CABINE_100' name="NET_CABINE_100" value="{{obj.NET_CABINE_100}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="NET_CABINE_200" class="col-form-label">NET CABINE (< 200 SIEGES)</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='NET_CABINE_200' name="NET_CABINE_200" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='NET_CABINE_200' name="NET_CABINE_200" value="{{obj.NET_CABINE_200}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="NET_CABINE_300" class="col-form-label">NET CABINE (< 300 SIEGES)</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='NET_CABINE_300' name="NET_CABINE_300" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='NET_CABINE_300' name="NET_CABINE_300" value="{{obj.NET_CABINE_300}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <h6 class='mt-5'><b>ARRANGEMENT CABINE ET CHANGEMENT DES TETIERES   </b> &nbsp;&nbsp;<span style="color: gray !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="ARRANGEMENT_CAB_100" class="col-form-label">CAPACITE < 100 SIEGES</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ARRANGEMENT_CAB_100' name="ARRANGEMENT_CAB_100" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ARRANGEMENT_CAB_100' name="ARRANGEMENT_CAB_100" value="{{obj.ARRANGEMENT_CAB_100}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ARRANGEMENT_CAB_200" class="col-form-label">CAPACITE < 200 SIEGES</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ARRANGEMENT_CAB_200' name="ARRANGEMENT_CAB_200" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ARRANGEMENT_CAB_200' name="ARRANGEMENT_CAB_200" value="{{obj.ARRANGEMENT_CAB_200}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ARRANGEMENT_CAB_300" class="col-form-label">CAPACITE < 300 SIEGES</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ARRANGEMENT_CAB_300' name="ARRANGEMENT_CAB_300" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ARRANGEMENT_CAB_300' name="ARRANGEMENT_CAB_300" value="{{obj.ARRANGEMENT_CAB_300}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="RECONC_BAG_BRS" class="col-form-label">RECONCILIATION BAGAGE BRS</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='RECONC_BAG_BRS' name="RECONC_BAG_BRS" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='RECONC_BAG_BRS' name="RECONC_BAG_BRS" value="{{obj.RECONC_BAG_BRS}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-3">
+                <label for="ID_BAG_100" class="col-form-label">IDENTIFICATION BAGAGE + 100 SIEGES</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ID_BAG_100' name="ID_BAG_100" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ID_BAG_100' name="ID_BAG_100" value="{{obj.ID_BAG_100}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-3">
+                <label for="ID_BAG_200" class="col-form-label">IDENTIFICATION BAGAGE + 200 SIEGES</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ID_BAG_200' name="ID_BAG_200" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ID_BAG_200' name="ID_BAG_200" value="{{obj.ID_BAG_200}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="PASSERELLE_PSG" class="col-form-label">PASSERELLE PASSAGER</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='PASSERELLE_PSG' name="PASSERELLE_PSG" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='PASSERELLE_PSG' name="PASSERELLE_PSG" value="{{obj.PASSERELLE_PSG}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="CAMION_ELEV" class="col-form-label">CAMION ELEVATEUR</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='CAMION_ELEV' name="CAMION_ELEV" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='CAMION_ELEV' name="CAMION_ELEV" value="{{obj.CAMION_ELEV}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div> 
+            <div class="form-group col-md-2">
+                <label for="VIP_BUS" class="col-form-label">VIP BUS</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='VIP_BUS' name="VIP_BUS" placeholder="PAR ROTATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='VIP_BUS' name="VIP_BUS" value="{{obj.VIP_BUS}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="PUSH_BACK" class="col-form-label">VEHICULE-TRANSPORT PISTE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='PUSH_BACK' name="PUSH_BACK" placeholder="PAR ROTATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='PUSH_BACK' name="PUSH_BACK" value="{{obj.PUSH_BACK}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="PUSH_BACK" class="col-form-label">PUSH BACK</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='PUSH_BACK' name="PUSH_BACK" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='PUSH_BACK' name="PUSH_BACK" value="{{obj.PUSH_BACK}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div> 
+            <div class="form-group col-md-2">
+                <label for="TOWING" class="col-form-label">TOWING</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='TOWING' name="TOWING" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='TOWING' name="TOWING" value="{{obj.TOWING}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="CHARIOT_BAG" class="col-form-label">CHARIOTS A BAGAGES</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='CHARIOT_BAG' name="CHARIOT_BAG" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='CHARIOT_BAG' name="CHARIOT_BAG" value="{{obj.CHARIOT_BAG}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="TRACT_CHARIOT" class="col-form-label">TRACTEUR DE CHARIOTS</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='TRACT_CHARIOT' name="TRACT_CHARIOT" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='TRACT_CHARIOT' name="TRACT_CHARIOT" value="{{obj.TRACT_CHARIOT}}" class="form-control input" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="TAPIS_BAG" class="col-form-label">TAPIS A BAGAGES</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='TAPIS_BAG' name="TAPIS_BAG" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='TAPIS_BAG' name="TAPIS_BAG" value="{{obj.TAPIS_BAG}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="PLATEFORME" class="col-form-label">PLATEFORME</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='PLATEFORME' name="PLATEFORME" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='PLATEFORME' name="PLATEFORME" value="{{obj.PLATEFORME}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="PORTE_CONTAINER_PALETTE" class="col-form-label">PORTE CONTAINER PALETTE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='PORTE_CONTAINER_PALETTE' name="PORTE_CONTAINER_PALETTE" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='PORTE_CONTAINER_PALETTE' name="PORTE_CONTAINER_PALETTE" value="{{obj.PORTE_CONTAINER_PALETTE}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="CONTAINER_PALETTE" class="col-form-label">CONTAINER PALETTE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='CONTAINER_PALETTE' name="CONTAINER_PALETTE" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='CONTAINER_PALETTE' name="CONTAINER_PALETTE" value="{{obj.CONTAINER_PALETTE}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="ELEV_FOURCHE" class="col-form-label">ELEVATEUR A FOURCHE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='ELEV_FOURCHE' name="ELEV_FOURCHE" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='ELEV_FOURCHE' name="ELEV_FOURCHE" value="{{obj.ELEV_FOURCHE}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="AGENT_SERV_PISTE" class="col-form-label">AGENT DE SERVITUDE PISTE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='AGENT_SERV_PISTE' name="AGENT_SERV_PISTE" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='AGENT_SERV_PISTE' name="AGENT_SERV_PISTE" value="{{obj.AGENT_SERV_PISTE}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="DB_MANIP_ULD" class="col-form-label">DOUBLE MANIPULATION DES ULD</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='DB_MANIP_ULD' name="DB_MANIP_ULD" placeholder="PAR HEURE" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='DB_MANIP_ULD' name="DB_MANIP_ULD" value="{{obj.DB_MANIP_ULD}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>LES CONDITIONS SPÉCIALES</b> &nbsp;&nbsp;<span style="color: gray !important;">( % )</span></h5>
+        <hr class='mt-0' style="height: 4px !important;">
+        <h6 class='mt-5'><b>MAJORATIONS</b> &nbsp;&nbsp;<span style="color: gray !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="assist_night" class="col-form-label">ASSISTANCE DE NUIT</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='assist_night' value="0" name="assist_night" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='assist_night' name="assist_night" value="{{obj.assist_night}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="assist_weekend" class="col-form-label">ASSISTANCE EN WEEKEND</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='assist_weekend' value="0" name="assist_weekend" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='assist_weekend' name="assist_weekend" value="{{obj.assist_weekend}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="assist_jourferie" class="col-form-label">ASSISTANCE EN JOUR FERIE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='assist_jourferie' value="0" name="assist_jourferie" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='assist_jourferie' name="assist_jourferie" value="{{obj.assist_jourferie}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-2">
+                <label for="standby" class="col-form-label">STAND BY</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='standby' value="0" name="standby" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='standby' name="standby" value="{{obj.standby}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-3">
+                <label for="abs_demande" class="col-form-label">ABSENCE DE DEMANDE AVANT 24H</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='abs_demande' value="0" name="abs_demande" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='abs_demande' name="abs_demande" value="{{obj.abs_demande}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <h6 class='mt-5'><b>PÉNALITÉS DE RETARD</b> &nbsp;&nbsp;<span style="color: gray !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="rtr_1_3" class="col-form-label">ENTRE 1H et 3H</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='rtr_1_3' value="0" name="rtr_1_3" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='rtr_1_3' name="rtr_1_3" value="{{obj.rtr_1_3}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-3">
+                <label for="rtr_3_5" class="col-form-label">ENTRE 3H et 5H</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='rtr_3_5' value="0" name="rtr_3_5" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='rtr_3_5' name="rtr_3_5" value="{{obj.rtr_3_5}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-3">
+                <label for="rtr_5" class="col-form-label">PLUS DE 5H</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='rtr_5' value="0" name="rtr_5" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='rtr_5' name="rtr_5" value="{{obj.rtr_5}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <h6 class='mt-5'><b>PÉNALITÉS D'ANNULATION</b> &nbsp;&nbsp;<span style="color: gray !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="cnl_12_24" class="col-form-label">ANNULATION ENTRE 12H et 24H</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='cnl_12_24' value="0" name="cnl_12_24" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='cnl_12_24' name="cnl_12_24" value="{{obj.cnl_12_24}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+            <div class="form-group col-md-3">
+                <label for="cnl_12" class="col-form-label">ANNULATION - 12H</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='cnl_12' value="0" name="cnl_12" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='cnl_12' name="cnl_12" value="{{obj.cnl_12}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+        <h6 class='mt-5'><b>RÉDUCTION</b> &nbsp;&nbsp;<span style="color: gray !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="reduction" class="col-form-label">POURCENTAGE</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" step="0.1" id='reduction' value="0" name="reduction" placeholder="PAR OPERATION" class="form-control input" required>
+                {% else %}
+                <input type="number" min="0" step="0.1" id='reduction' name="reduction" value="{{obj.reduction}}" class="form-control input" required readonly>
+                {% endif %} 
+            </div>
+        </div>
+    </div>
+        
+    {% if 'AJOUT' in title %}
+    <button type="submit" id="submit-form" class="btn" style="color: white !important; background-color: #0e385b !important;" disabled><b>AJOUTER</b></button>
+    {% else %}
+    {% if obj.activite != 'OCCASIONNEL' %}
+    <button type="submit" id="submit-form" class="btn" style="color: white !important; background-color: #0e385b !important;" disabled  ><b>MODIFIER</b></button>
+    {% else %}
+    <button type="submit" id="submit-form" class="btn" style="color: white !important; background-color: #0e385b !important;"><b>MODIFIER</b></button>
+    {% endif %}
+    {% endif %}
+    
+  </form>
+
+  <script>
+
+    $('#locked').on('change', function(){
+        var chk = $(this).is(':checked');
+        if(!chk){
+            $(':input').not('#company_dispatcher').not('#monnaie').not('#activite').prop('readonly', false);
+            $('#submit-form').prop('disabled', false);
+        }
+        else{
+            $(':input').not('#company_dispatcher').not('#monnaie').not('#activite').prop('readonly', true);
+            $('#submit-form').prop('disabled', true);
+        }
+    });
+
+    $('.input').change(function(){
+        var empty = false;
+        console.log($('#activite').val())
+        if($('#activite').val() == 'OCCASIONNEL'){
+            if($('#company_dispatcher').val() == ''|| $('#monnaie').val() == "('', '---------')" || $('#activite').val() == "('', '---------')"){
+                empty = true;
+            }
+        }
+        else{
+            $('.input').each(function(){
+            if($(this).val() == ''){
+                console.log($(this));
+                empty = true;
+                return false;
+            }
+        });
+        }
+        // console.log(empty);
+        // console.log($('#monnaie').val());
+        // console.log($('#activite').val());
+        if(!empty && ($('#monnaie').val() != "('', '---------')" && $('#activite').val() != "('', '---------')")){
+            document.getElementById('submit-form').removeAttribute('disabled');
+        }
+        else{
+            document.getElementById('submit-form').setAttribute('disabled', true);
+        }
+        // return empty;
+
+        // if ($('#company_dispatcher').val() != '' && $('#monnaie').val() != "('', '---------')" && $('#activite').val() != "('', '---------')") {
+        //     document.getElementById('submit-form').removeAttribute('disabled')
+        // }
+        // else{
+        //     document.getElementById('submit-form').setAttribute('disabled', true);
+        // }
+    });
+
+    var typingTimer_dep;
+    var typingTimer_arr;
+
+    $('#company_dispatcher').on('keyup', function () {
+        clearTimeout(typingTimer_dep);
+        typingTimer_dep = setTimeout(ajax_job, 200);
+    });
+
+    $('#company_dispatcher').on('keydown', function () {
+        clearTimeout(typingTimer_dep);
+    });
+
+    function ajax_job(){
+        data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+        'company_dispatcher' : $('#company_dispatcher').val()};
+        $.ajax({
+            type:'POST',
+            url:"{% url 'core:valid-new-company-name' %}",
+            datatype: 'JSON',
+            data: data,
+            success: function(data){
+                if($('#alert').children().length > 0){
+                    $('#message').slideToggle("slow");
+                    $('#alert').find('.msg').remove();
+                }
+                if( data.exs ){
+                    $('#alert').append('<p class="msg"><b>Cette compagnie existe déjà !</b></p>');
+                    $('#message').slideToggle("slow");
+                    $('#message').addClass(data.status)
+                    document.getElementById('submit-form').disabled = true;
+                }
+                else{
+                    if($('#company_dispatcher').val() != '' && $('#monnaie').val() != "('', '---------')" && $('#activite').val() != "('', '---------')"){
+                        document.getElementById('submit-form').disabled = false;
+                    }
+                }
+            }
+        });
+    };
+
+    var obj = document.getElementById('solde');
+    var poste = document.getElementById('activite');
+    // $('#solde').slideUp();
+    // $('#fact').slideUp();
+    if($('#activite').val() != 'CONTRACTUEL'){
+        $('#fact').slideUp();
+    }
+    $('#activite').change(function(){
+    if(poste.value=='OCCASIONNEL'){
+        $('#solde_div').slideDown();
+        $('#solde_date_div').slideDown();
+        $('#fact').slideUp('slow');
+        document.getElementById('solde_date').setAttribute('required', true)
+        document.getElementById('solde').setAttribute('required', true)
+    }
+    else if(poste.value=='CONTRACTUEL'){
+        document.getElementById('solde').removeAttribute('required');
+        document.getElementById('solde_date').removeAttribute('required');
+        $('#solde_div').slideUp();
+        $('#solde_date_div').slideUp();
+        $('#fact').slideDown('slow');
+    }
+    else{
+        $('#solde_div').slideUp();
+        $('#solde_date_div').slideUp();
+        $('#fact').slideUp();
+    }
+    });
+
+    $('form').submit(function(e) {
+        $(':disabled').each(function(e) {
+            $(this).removeAttr('disabled');
+        })
+    });
+
+  </script>
+    
+
+{% endblock content %}

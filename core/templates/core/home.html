@@ -1,0 +1,52 @@
+{% extends 'main/base.html' %}
+
+
+{% block content %}
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+        <p class="mb-0 msg">{{ message }}</p>
+        <button type="button" class="close align-items-center mb-0" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% if request.user.profile.poste == 'SOUS DIRECTEUR GESTION DES ESCALES' %}
+<p>Welcome {{request.user.first_name}} (SDGE) !</p>
+{% elif request.user.profile.dpt == 'DPT CONTRATS ET ASSISTANCE AU SOL' %}
+<a href="{% url 'core:add-occas-flight' %}" class="btn fixed-top btn-lg my-0 p float-right" style="color: white !important; background-color: #0e385b !important;">
+    <b>Ajouter un vol</b>
+</a>
+<a href="{% url 'core:request-summary' activite='occas' %}" class="btn fixed-top btn-lg my-0 p float-right" style="color: white !important; background-color: #0e385b !important;">
+    <b>Gestion des vols</b>
+</a>
+<a href="{% url 'core:companies-summary' %}" class="btn fixed-top btn-lg my-0 p float-right" style="color: white !important; background-color: #0e385b !important;">
+    <b>Gestion des compagnies</b>
+</a>
+<a href="{% url 'core:fiche-touchee' %}" class="btn fixed-top btn-lg my-0 p float-right" style="color: white !important; background-color: #0e385b !important;">
+    <b>Gestion des fiches</b>
+</a>
+<p>Welcome {{request.user.first_name}} (CDCAS) !</p>
+{% else %}
+<p>{{request.user.profile.poste}}</p>
+{% endif %}
+
+<script>
+
+    function Delete_message(){
+        $('#div-msg').slideToggle('slow');
+        $('#exist').children().first().remove();
+    }
+
+    window.onload = function(){
+        if($('#exist').children().length > 1){
+            setTimeout(Delete_message, 6000);
+        }
+    };
+
+</script>
+
+{% endblock content %}

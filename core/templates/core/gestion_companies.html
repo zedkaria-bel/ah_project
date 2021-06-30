@@ -1,0 +1,91 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+
+{% block head_title %}
+Liste des compagnies
+{% endblock head_title %}
+
+{% block content %}
+
+{% if request.user.profile.poste == 'CHEF DEPARTEMENT' %}
+<a href="{% url 'core:add-company' %}" class="btn fixed-top btn-lg my-0 p float-right mb-4" style="color: white !important; background-color: #0e385b !important;">
+    <b>Ajouter une compagnie</b>
+</a>
+{% endif %}
+<a href="{% url 'core:add-schedule' %}" target="_blank" class="btn fixed-top btn-lg my-0 p float-right mb-4" style="color: white !important; background-color: #0e385b !important;">
+    <b>Ajouter un programme</b>
+</a>
+<div class="table-responsive">
+    <table id="companies" class="table table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col"><b>#</b></th>
+            <th scope="col"><b>Compagnie</b></th>
+            <th scope="col"><b>Activité</b></th>
+            <th scope="col"><b>Monnaie</b></th>
+            <th scope="col"><b>Solde</b></th>
+            <th scope="col"><b>Date du solde</b></th>
+            <th scope="col"><b>Solde estimé</b></th>
+            <th scope="col"><b>Action</b></th>
+          </tr>
+        </thead>
+        <tbody>
+            {% for comp in object_list %}
+            <tr class="row_tab">
+                <th scope="row"><b>{{ forloop.counter }}</b></th>
+                <td><b>{{comp.company_dispatcher}}</b></td>
+                <td><b>{{comp.activite}}</b></td>
+                <td><b>{{comp.monnaie}}</b></td>
+                <td><b>
+                    {% if comp.activite == 'OCCASIONNEL' %}
+                    <span>{{comp.solde}}&nbsp;&nbsp; USD</span>
+                    {% else %}
+                    <span>—</span>
+                    {% endif %}
+                </b></td>
+                <td><b>
+                    {% if comp.activite == 'OCCASIONNEL' %}
+                    <span>{{comp.solde_date|date:'d-m-Y'}}</span>
+                    {% else %}
+                    <span>—</span>
+                    {% endif %}
+                </b></td>
+                <td><b>
+                    {% if comp.activite == 'OCCASIONNEL' %}
+                    {% if comp.solde_estimee < 0 %}
+                    <span style="color: red;">{{comp.solde_estimee}}&nbsp;&nbsp; USD</span>
+                    {% else %}
+                    <span style="color: green;">{{comp.solde_estimee}}&nbsp;&nbsp; USD</span>
+                    {% endif %}
+                    {% else %}
+                    <span>—</span>
+                    {% endif %}
+                </b></td>
+                <td><b>
+                    <a href="{{comp.get_absolute_url}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-pencil-fill" viewBox="0 0 16 16">
+                            <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/>
+                          </svg>
+                    </a>
+                </b></td>
+            </tr>
+            {% endfor %}     
+        </tbody>
+    </table>
+    
+
+</div>
+
+<script>
+    $(document).ready( function () {
+        $('#companies').DataTable({
+            "ordering": false,
+            "pagingType": "full_numbers"
+        });
+        $('.dataTables_paginate').addClass('pagination pagination-lg d-flex justify-content-center mt-5');
+    } );
+</script>
+
+
+{% endblock content %}

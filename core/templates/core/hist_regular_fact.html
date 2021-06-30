@@ -1,0 +1,75 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+{% load i18n %}
+
+{% block head_title %}
+Historique des facturations des vols contractuels
+{% endblock head_title %}
+
+{% block content %}
+
+<div class="table-responsive">
+    <table id="tab_hist_fact" class="table table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col"><b>#</b></th>
+            <th scope="col"><b>DATE FACTURATION</b></th>
+            <th scope="col"><b>ESCALE</b></th>
+            <th scope="col"><b>COMPAGNIE</b></th>
+            <th scope="col"><b>PÉRIODE</b></th>
+            <th scope="col"><b>À PARTIR DU</b></th>
+            <th scope="col"><b>JUSQU'AU</b></th>
+            <th scope="col"><b>UTILISATEUR</b></th>
+            <th scope="col"><b>TYPE</b></th>
+            <th scope="col"><b>MONTANT</b></th>
+          </tr>
+        </thead>
+        <tbody>
+            {% for fiche in object_list %}
+            <tr class="row_tab">
+                <th scope="row"><b>{{ forloop.counter0|add:page_obj.start_index }}</b></th>
+                <td><b>
+                    {% language 'fr' %}
+                        {{fiche.date_last_add|date:'d F Y - H:i'}}
+                    {% endlanguage %}
+                </b></td>
+                <td><b>{{fiche.escale.escale}} - {{fiche.escale.full_name}} </b></td>
+                <td><b>{{fiche.company}} </b></td>
+                <td><b>
+                    {% language 'fr' %}
+                        {{fiche.from_date|timesince:fiche.until_date}}
+                    {% endlanguage %}
+                </b></td>
+                <td><b>
+                    {% language 'fr' %}
+                        {{fiche.from_date|date:'d F Y'}}
+                    {% endlanguage %}
+                </b></td>
+                <td><b>
+                    {% language 'fr' %}
+                        {{fiche.until_date|date:'d F Y'}}
+                    {% endlanguage %}
+                </b></td>
+                <td><b>{{fiche.user_add.first_name}} {{fiche.user_add.last_name}} </b></td>
+                <td><b>{% if fiche.type_fact %} {{fiche.type_fact}} {% else %} - {% endif %} </b></td>
+                <td><b>{{fiche.montant}} &nbsp; {{fiche.company.monnaie}} </b></td>
+            {% endfor %}     
+        </tbody>
+    </table>
+    
+</div>
+
+<script>
+    $(document).ready( function () {
+        $('#tab_hist_fact').DataTable({
+            "ordering": false,
+            responsive: true,
+            "pagingType": "full_numbers"
+        });
+        $('.dataTables_paginate').addClass('pagination pagination-lg d-flex justify-content-center mt-5');
+    } );
+</script>
+
+
+{% endblock content %}

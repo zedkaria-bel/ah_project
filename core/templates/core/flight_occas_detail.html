@@ -1,0 +1,1352 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+{% load static %}
+
+{% block head_title %}
+{% if 'DETAIL' in title %}
+Détails du vol
+{% else %}
+Nouveau vol
+{% endif %}
+{% endblock head_title %}
+
+{% block content %}
+<style>
+    @font-face {
+    font-family: 'Staatliches';
+      src: local('Secular_One'),
+          url("{% static 'core/font/Secular_One/SecularOne-Regular.ttf' %}");
+    }
+  </style>
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+        <p class="mb-0 msg">{{ message }}</p>
+        <button type="button" class="close align-items-center mb-0" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if 'DETAIL' in title %}
+<div class="d-flex">
+    <div class="mb-2 w-50">
+        <div class="user d-flex flex-row">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
+            </svg>
+            <p class="ml-2 text-muted font-weight-normal">Dernière modification effectué par : {{obj.user_last_edit}}</p>
+        </div>
+        <div class="time d-flex flex-row">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-fill" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+            </svg>
+            <p class="ml-2 text-muted font-weight-normal">{{obj.date_last_edit|date:'d F Y - H:i'}}</p>
+        </div>
+    </div>
+    {% if request.user.profile.poste == 'CHEF DEPARTEMENT' or request.user.profile.poste == 'CHEF DE SERVICE' %}
+    <div class="form-group ml-auto mt-2">
+        <input type="checkbox" class="form-check-input align-self-center mt-2" id="locked" {% if obj.montant_globale is None or not obj.fiche_received %} disabled {% else %} checked {% endif %}>
+        <label class="form-check-label h3 mr-3 mb-0 align-self-center" for="locked"><b>LOCKED</b></label>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-lock-fill align-self-center mb-2" viewBox="0 0 16 16">
+            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+          </svg>
+    </div>
+{% endif %}
+</div>
+{% endif %}
+{% if obj.montant_globale is not None %}
+
+{% if act == 'OCCASIONNEL' %}
+<div id="printer" class="ml-auto mr-3 mb-3 d-flex flex-row justify-content-end" style="cursor: pointer; width: min-content !important;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#7d7d7d" class="bi bi-printer-fill" viewBox="0 0 16 16">
+        <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
+        <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+    </svg>
+    <p class="ml-3 h4" style="color: #7d7d7d !important;">Imprimer</p>
+</div>
+{% endif %}
+
+<div id="to_print">
+<!-- RESUME DE LA FACTURE -->
+<div class="shadow-lg p-3 mb-5 bg-white rounded w-100y" style="border-top: 14px #20934c solid !important; font-family: Staatliches !important;">
+    <p class="d-flex justify-content-center mb-1 h1">RESUMÉ DE LA FACTURATION&nbsp;&nbsp; - &nbsp; <span style="color: gray !important;">HORS TAXES</span></p>
+    <hr class="mb-4">
+    <div class="row mb-4">
+        <div class="col" style="border-right: 3px #d9d9d9 solid !important;">
+            <p class="h4 d-flex justify-content-center mb-0">TOTALE : &nbsp;&nbsp; <b>{{montant_usd}} &nbsp; USD</b></p>
+        </div>
+        <div class="col" style="border-right: 3px #d9d9d9 solid !important;">
+            <p class="h4 d-flex justify-content-center mb-0">TOTALE : &nbsp;&nbsp; <b>{{montant_eur}} &nbsp; EUR</b></p>
+        </div>
+        <div class="col">
+            <p class="h4 d-flex justify-content-center mb-0">TOTALE : &nbsp;&nbsp; <b>{{montant_dzd}} &nbsp; DZD</b></p>
+        </div>
+    </div>
+    <hr class="mb-4">
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50">Tarif de base &nbsp; : </p><p class="h3 mr-5 ml-auto">{{obj.tarif_de_base}} &nbsp; {% if act != 'OCCASIONNEL' %} {{obj.monnaie}} {% else %} USD {% endif %} </p>
+    </div>
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50">Extra services &nbsp; : </p><p class="h3 mr-5 ml-auto">{{obj.extra_service}} &nbsp; {% if act != 'OCCASIONNEL' %} {{obj.monnaie}} {% else %} USD {% endif %}</p>
+    </div>
+    <hr class="mt-4">
+    <!-- MAJORATION -->
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50 font-weight-normal">Majoration nuit &nbsp; : </p><p class="h3 mr-5 ml-auto font-weight-normal"> {{obj.major_night}} &nbsp; %</p>
+    </div>
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50">Majoration weekend &nbsp; : </p><p class="h3 mr-5 ml-auto">{{obj.major_weekend}} &nbsp; %</p>
+    </div>
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50">Majoration standby &nbsp; : </p><p class="h3 mr-5 ml-auto">{{obj.major_standby}} &nbsp; %</p>
+    </div>
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50">Majoration jour férié &nbsp; : </p><p class="h3 mr-5 ml-auto">{{obj.major_jourferie}} &nbsp; %</p>
+    </div>
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50">Majoration absence demande 24H &nbsp; : </p><p class="h3 mr-5 ml-auto">{{obj.major_abs_demande}} &nbsp; %</p>
+    </div>
+    <hr class="mt-0">
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50 mb-0 align-middle">Majorations totales &nbsp; : </p><p class="h3 mr-5 ml-auto mb-0">(&nbsp; {{obj.majoration}} % &nbsp; ) &nbsp; {{montant_majoration}} &nbsp; {% if act != 'OCCASIONNEL' %} {{obj.monnaie}} {% else %} USD {% endif %}</p>
+    </div>
+    <hr class="mb-5">
+    <!-- MAJORATION -->
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50">Réductions &nbsp; : </p><p class="h3 mr-5 ml-auto">(&nbsp; {{obj.reduction}} % &nbsp; ) &nbsp; {{montant_reduction}} &nbsp; {% if act != 'OCCASIONNEL' %} {{obj.monnaie}} {% else %} USD {% endif %}</p>
+    </div>
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50">Retard &nbsp; : </p><p class="h3 mr-5 ml-auto">(&nbsp; {{obj.retard}} % &nbsp; ) &nbsp; {{montant_retard}} &nbsp; {% if act != 'OCCASIONNEL' %} {{obj.monnaie}} {% else %} USD {% endif %}</p>
+    </div>
+    <div class="d-flex">
+        <p class="h3 ml-5 w-50">Annulation &nbsp; : </p><p class="h3 mr-5 ml-auto">(&nbsp; {{obj.annulation}} % &nbsp; ) &nbsp; {{montant_annulation}} &nbsp; {% if act != 'OCCASIONNEL' %} {{obj.monnaie}} {% else %} USD {% endif %}</p>
+    </div>
+</div>
+{% endif %}
+
+{% if obj.etat_du_vol == 'OPERE' and comp.activite == 'CONTRACTUEL' and obj.montant_globale is None %}
+<div class="alert alert-warning alert-dismissible fade show align-items-center mb-4" role="alert">
+    <div class="d-flex flex-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#6b6818" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
+            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+          </svg>
+        <h4 class="mb-4 ml-3 align-self-end" style="font-weight: bolder !important;"><b>NOTE IMPORTANTE</b></h4>
+    </div>
+    <p class="mb-0 font-weight-bold h5">Veuillez renseigner le montant du tarif de base et des extras services <a href="#relevee">en-bas</a> !</p>
+</div>
+{% endif%}
+
+<form method="POST" action="{% url 'core:valid-vol-occas' %}" enctype="multipart/form-data" class="form">
+    {% csrf_token %}
+    <!-- PAYMENT -->
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h4 style="font-weight: bolder !important;"><b>PAIEMENT</b></h4>
+        {% if 'AJOUT' in title %}
+        <p class="h6 mt-4 mb-4" style="color: gray !important;">Si vous ne trouvez pas votre compagnie, ajoutez là en <a href="{% url 'core:add-company' %}" target="_blank">cliquant ici !</a></p>
+        {% endif %}
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="compagnie_dispatcher" class="col-form-label">Compagnie dispatcher</label>
+                {% if 'DETAIL' in title %}
+                <input type="hidden" id='n_field' name="n_field" value="{{obj.n_field}}" class="form-control">
+                <select class="custom-select" name="compagnie_dispatcher" id="compagnie_dispatcher" disabled>
+                    <option value="{{obj.compagnie_dispatcher}}" selected>{{obj.compagnie_dispatcher}}</option>
+                </select>
+                {% else %}
+                <input type="hidden" id='n_field' name="n_field" value="0" class="form-control">
+                <select class="custom-select" name="compagnie_dispatcher" id="compagnie_dispatcher" required>
+                    {% for p in company %}
+                    {% if p|get_type == "<class 'tuple'>" %}
+                        <option value="{{p}}">{{p.1}}</option>
+                    {% else %}
+                    <option value="{{p}}">{{p}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="mode_paiement" class="col-form-label">Mode de paiement</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <select class="custom-select" name="mode_paiement" id="mode_paiement" disabled>
+                    {% for p in payment %}
+                    {{obj.mode_paiement}}
+                    {% if p == obj.mode_paiement %}
+                    <option value="{{obj.mode_paiement}}" selected>{{obj.mode_paiement}}</option>
+                    {% else %}
+                    <option value="{{p}}">{{p}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% else %}
+                <select class="custom-select" name="mode_paiement" id="mode_paiement" required>
+                    {% for p in payment %}
+                    {{obj.mode_paiement}}
+                    {% if p == obj.mode_paiement %}
+                    <option value="{{p}}" selected>{{p}}</option>
+                    {% else %}
+                    <option value="{{p}}">{{p}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% endif %}
+                {% else %}
+                <select class="custom-select" name="mode_paiement" id="mode_paiement" required>
+                    {% for p in payment %}
+                    {% if p != 'CONTRAT' %}
+                    <option value="{{p}}">{{p}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="monnaieSelect" class="col-form-label">Monnaie</label>
+                <select class="custom-select" name="monnaie" id="monnaieSelect" disabled>
+                    {% if 'DETAIL' in title %}
+                    <option value="{{monnaie}}" selected>{{monnaie}}</option>
+                    {% else %}
+                    {% for mon in monnaie %}
+                    <option value="{{mon}}">{{mon}}</option>
+                    {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            {% if obj.montant_globale is not None %}
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">N° facture</label>
+                {% if obj.reponse %}
+                <input type="text" min="0" class="form-control unlock-input" name="n_facture" value="{{obj.n_facture}}" id="n_facture" placeholder="N° facture" readonly required>
+                {% else %}
+                <input type="text" min="0" class="form-control unlock-input" name="n_facture" id="n_facture" placeholder="N° facture">
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- ASSISTANCE -->
+    <div id="message_dem" class="mt-2 pb-0 pt-0" style="display: none;">
+        <div id="alert_dem" class="alert alert-danger alert-dismissible fade show" role="alert">
+        </div>
+    </div>
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h4 style="font-weight: bolder !important;"><b>ASSISTANCE</b></h4>
+            <div class="form-row">
+              <div class="form-group col-md-2">
+                <label for="date_demande" class="col-form-label">Date de la demande</label>
+                {% if 'DETAIL' in title %}
+                <input class="form-control demande" name="date_demande" type="date" value="{{obj.date_demande|date:'Y-m-d'}}" id="date_demande" {{readonly}} required>
+                {% else %}
+                <input class="form-control demande" name="date_demande" type="date" id="date_demande" required>
+                {% endif %}
+              </div>
+              <div class="form-group col-md-2">
+                <label for="heure_demande" class="col-form-label">Heure de la demande</label>
+                {% if 'DETAIL' in title %}
+                <input class="form-control demande" name="heure_demande" type="time" value="{{obj.heure_demande|time:'H:i'}}" id="heure_demande" {{readonly}} required>
+                {% else %}
+                <input class="form-control demande" name="heure_demande" type="time" id="heure_demande" required>
+                {% endif %}
+              </div>
+              <div class="form-group col-md-2">
+                <label for="inputPassword10" class="col-form-label">Type Avion</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="text" class="form-control unlock-input" name="type_avion" value="{{obj.type_avion}}" id="inputPassword10" placeholder="Password" readonly required>
+                {% else %}
+                <input type="text" class="form-control unlock-input" name="type_avion" value="{{obj.type_avion}}" id="inputPassword10" placeholder="Type" required>
+                {% endif %}
+                {% else %}
+                <input type="text" class="form-control unlock-input" name="type_avion" id="inputPassword10" placeholder="Type" required>
+                {% endif %}
+              </div>
+              <div class="form-group col-md-1">
+                <label for="inputPassword5" class="col-form-label">REG</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="text" class="form-control unlock-input" name="reg" value="{{obj.reg}}" id="inputPassword5" placeholder="Password" readonly required>
+                {% else %}
+                <input type="text" class="form-control unlock-input" name="reg" value="{{obj.reg}}" id="inputPassword5" placeholder="Type" required>
+                {% endif %}
+                {% else %}
+                <input type="text" class="form-control unlock-input" name="reg" id="inputPassword5" placeholder="Matricule avion" required>
+                {% endif %}
+              </div>
+              <div class="form-group col-md-1">
+                <label for="inputPassword6" class="col-form-label">Capacité</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="number" min="0" class="form-control unlock-input" name="capacite" value="{{obj.capacite}}" id="inputPassword6" placeholder="Capacité" readonly required>
+                {% else %}
+                <input type="number" min="0" class="form-control unlock-input" name="capacite" value="{{obj.capacite}}" id="inputPassword6" placeholder="Capacité" required>
+                {% endif %}
+                {% else %}
+                <input type="number" min="0" value="0" class="form-control unlock-input" name="capacite" id="inputPassword6" placeholder="Capacité" required>
+                {% endif %}
+              </div>
+              <div class="form-group col-md-2">
+                <label for="inputPassword7" class="col-form-label">MTOW (Tonnes)</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="number" min="0" class="form-control unlock-input" name="mtow_tonnes_field" value="{{obj.mtow_tonnes_field}}" id="inputPassword7" placeholder="Password" readonly required>
+                {% else %}
+                <input type="number" min="0" class="form-control unlock-input" name="mtow_tonnes_field" value="{{obj.mtow_tonnes_field}}" id="inputPassword7" placeholder="Type" required>
+                {% endif %}
+                {% else %}
+                <input type="number" min="0" class="form-control unlock-input" name="mtow_tonnes_field" id="inputPassword7" placeholder="Poids" required>
+                {% endif %}
+              </div>
+              <div class="form-group col-md-2">
+                <label for="etat_du_vol" class="col-form-label">Etat du vol</label>
+                {% if 'DETAIL' in title %}
+                {% if obj.etat_du_vol == 'OPERE' or obj|if_late %}
+                <select class="custom-select" name="etat_du_vol" id="etat_du_vol" disabled required>
+                    {% for etat in etat_du_vol %}
+                    {% if etat == obj.etat_du_vol %}
+                    <option value="{{etat}}" selected>{{etat}}</option>
+                    {% else %}
+                    <option value="{{etat}}">{{etat}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% else %}
+                <select class="custom-select" name="etat_du_vol" id="etat_du_vol" required>
+                    {% if obj.etat_du_vol not in etat_du_vol %}
+                    <option value="New" selected>New</option>
+                    {% endif %}
+                    {% for etat in etat_du_vol %}
+                    {% if etat == obj.etat_du_vol %}
+                    <option value="{{etat}}" selected>{{etat}}</option>
+                    {% else %}
+                    <option value="{{etat}}">{{etat}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% endif %}
+                {% else %}
+                <select class="custom-select" name="etat_du_vol" id="etat_du_vol" required disabled>
+                    {% if obj.etat_du_vol not in etat_du_vol %}
+                    <option value="New" selected>New</option>
+                    {% endif %}
+                    {% for etat in etat_du_vol %}
+                    <option value="{{etat}}">{{etat}}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-2">
+                <label for="inputCity" class="col-form-label">Nature de la touchée</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <select class="custom-select unlock-select" name="nature_touchee" id="inputGroupSelect01" disabled required>
+                    {% for nat in nature %}
+                    {% if nat == obj.nature_touchee %}
+                    <option value="{{nat}}" selected>{{nat}}</option>
+                    {% else %}
+                    <option value="{{nat}}">{{nat}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% else %}
+                <select class="custom-select unlock-select" name="nature_touchee" id="inputGroupSelect01" required>
+                    {% for nat in nature %}
+                    {% if nat == obj.nature_touchee %}
+                    <option value="{{nat}}" selected>{{nat}}</option>
+                    {% else %}
+                    <option value="{{nat}}">{{nat}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% endif %}
+                {% else %}
+                <select class="custom-select unlock-select" name="nature_touchee" id="inputGroupSelect01" required>
+                    {% for nat in nature %}
+                    <option value="{{nat}}">{{nat}}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+              </div>
+              <div class="form-group col-md-3">
+                <label for="inputState" class="col-form-label">Opérateur</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="text" class="form-control unlock-input" name="operateur" value="{{obj.operateur}}" id="inputPassword8" placeholder="Password" readonly required>
+                {% else %}
+                <input type="text" class="form-control unlock-input" name="operateur" value="{{obj.operateur}}" id="inputPassword8" placeholder="Opérateur" required>
+                {% endif %}
+                {% else %}
+                <input type="text" class="form-control unlock-input" name="operateur" id="inputPassword8" placeholder="Opérateur" required>
+                {% endif %}
+              </div>
+              {% if 'AJOUT' not in title and obj.n_fiche_touchee is not None %}
+              <div class="form-group col-md-2">
+                {% if 'DETAIL' in title %}
+                <label for="n_fiche_touchee" class="col-form-label">N° Fiche touchée</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="number" min="0" class="form-control unlock-input" name="n_fiche_touchee" value="{{obj.n_fiche_touchee}}" id="n_fiche_touchee" placeholder="N° Fiche" readonly required>
+                {% else %}
+                <input type="number" min="0" class="form-control unlock-input" name="n_fiche_touchee" value="{{obj.n_fiche_touchee}}" id="n_fiche_touchee" placeholder="N° Fiche" required>
+                {% endif %}
+                {% endif %}
+              </div>
+              <div class="form-group col-md-2 ml-3 pl-5 pt-5">
+                <input type="checkbox" class="form-check-input"name='fiche_phys_received' id="fiche_phys_received" {% if obj.fiche_phys_received %} checked disabled {% else %} '' {% endif %}>
+                <label class="form-check-label" for="fiche_phys_received"><b>Fiche physique reçu</b></label>
+              </div>
+              <div class="form-group col-md-4">
+                <label for="n_fiche_touchee" class="col-form-label">Fiche de touchée scannée</label>
+                <a href="{{obj.fiche_touchee_file.url}}" target="_blank" download class="d-flex flex-row mt-3" style="color: black !important;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                    </svg>
+                    <p class="ml-3 h4"> {{ obj.fiche_touchee_file|filename }} </p>
+                </a>
+              </div>
+              {% endif %}
+            </div>
+            {% if obj.etat_du_vol == 'ANNULE' %}
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="inputPassword9" class="col-form-label">Date d'annulation</label>
+                    <input type="text" class="form-control" id="date_cnl" name="date_cnl" value="{{obj.date_cnl|date:'Y-m-d'}}" id="inputPassword9" placeholder="Password" readonly required>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="inputPassword9" class="col-form-label">Heure d'annulation</label>
+                    <input type="time" class="form-control" id="heure_cnl" name="heure_cnl" value="{{obj.heure_cnl|time:'H:i'}}" id="inputPassword9" placeholder="Password" readonly required>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="inputPassword9" class="col-form-label">CNL / ETA</label>
+                    <input type="text" class="form-control" id="cnl_eta" name="cnl_eta" value="{{obj.cnl_eta|smooth_timedelta}}" id="inputPassword9" placeholder="Password" readonly required>
+                </div>
+            </div>
+            {% endif %}
+    </div>
+    <!-- ARRIVE -->
+    <div id="message_arr" class="mt-2 pb-0 pt-0" style="display: none;">
+        <div id="alert_arr" class="alert alert-danger alert-dismissible fade show" role="alert">
+        </div>
+    </div>
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h4 style="font-weight: bolder !important;"><b>ARRIVEE</b></h4>
+        <div id="message_arr_key" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_arr_key" class="alert alert-danger alert-dismissible fade show" role="alert">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="n_vol_arr" class="col-form-label">N° Vol arrivée</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="text" class="form-control" name="n_vol_arr" value="{{obj.n_vol_arr}}" id="n_vol_arr" placeholder="Password" readonly required>
+                {% else %}
+                <input type="text" class="form-control" name="n_vol_arr" value="{{obj.n_vol_arr}}" id="n_vol_arr" placeholder="Type" required>
+                {% endif %}
+                {% else %}
+                <input type="text" class="form-control flt" name="n_vol_arr" id="n_vol_arr" placeholder="N° Vol arrivée" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword12" class="col-form-label">Date arrivée</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="date" class="form-control arr" id="date_arrivee" name="date_arrivee" value="{{obj.date_arrivee|date:'Y-m-d'}}" id="inputPassword12" placeholder="Password" readonly required>
+                {% else %}
+                <input type="date" class="form-control arr" id="date_arrivee" name="date_arrivee" value="{{obj.date_arrivee|date:'Y-m-d'}}" id="inputPassword12" placeholder="Type" required>
+                {% endif %}
+                {% else %}
+                <input type="date" class="form-control arr flt" id="date_arrivee" name="date_arrivee" id="inputPassword12" placeholder="Date arrivée" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword13" class="col-form-label">Heure arrivée</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="time" class="form-control arr" id="sta" name="sta" value="{{obj.sta|time:'H:i'}}" id="inputPassword13" placeholder="Password" readonly required>
+                {% else %}
+                <input type="time" class="form-control arr" id="sta" name="sta" value="{{obj.sta|time:'H:i'}}" id="inputPassword13" placeholder="Type" required>
+                {% endif %}
+                {% else %}
+                <input type="time" class="form-control arr flt" id="sta" name="sta" id="inputPassword13" placeholder="Date arrivée" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="prov" class="col-form-label">Provenance</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="text" class="form-control" name="prov" value="{{obj.prov}}" id="prov" placeholder="Password" readonly required>
+                {% else %}
+                <input type="text" class="form-control" name="prov" value="{{obj.prov}}" id="prov" placeholder="Type" required>
+                {% endif %}
+                {% else %}
+                <input type="text" class="form-control flt" name="prov" id="prov" placeholder="Provenance" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="escale" class="col-form-label">Escale</label>
+                <select class="custom-select flt" name="escale" id="escale" required {% if obj|if_readonly or obj|flight_cnl %} disabled {% endif %} >
+                    {% for esc in escales %}
+                    <option value="{{esc.escale}}" {% if esc.escale == obj_esc %} selected {% endif %} >{{esc.full_name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    <!-- DEPART -->
+    <div id="message_dep" class="mt-2 pb-0 pt-0" style="display: none;">
+        <div id="alert_dep" class="alert alert-danger alert-dismissible fade show" role="alert">
+        </div>
+    </div>
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h4 style="font-weight: bolder !important;"><b>DEPART</b></h4>
+        <div id="message_dep_key" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_dep_key" class="alert alert-danger alert-dismissible fade show" role="alert">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">N° Vol départ</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="text" class="form-control" name="n_vol_dep" value="{{obj.n_vol_dep}}" id="inputPassword16" placeholder="Password" readonly required>
+                {% else %}
+                <input type="text" class="form-control" name="n_vol_dep" value="{{obj.n_vol_dep}}" id="inputPassword16" placeholder="Type" required>
+                {% endif %}
+                {% else %}
+                <input type="text" class="form-control" name="n_vol_dep" id="inputPassword16" placeholder="N° Vol départ" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="inputPassword17" class="col-form-label">Date départ</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="date" class="form-control dep" id="date_depart" name="date_depart" value="{{obj.date_depart|date:'Y-m-d'}}" id="inputPassword17" placeholder="Password" readonly required>
+                {% else %}
+                <input type="date" class="form-control dep" id="date_depart" name="date_depart" value="{{obj.date_depart|date:'Y-m-d'}}" id="inputPassword17" placeholder="Type" required>
+                {% endif %}
+                {% else %}
+                <input type="date" class="form-control dep flt" id="date_depart" name="date_depart" id="inputPassword17" placeholder="Date départ" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="inputPassword18" class="col-form-label">Heure départ</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="time" class="form-control dep" id="std" name="std" value="{{obj.std|time:'H:i'}}" id="inputPassword18" placeholder="Password" readonly required>
+                {% else %}
+                <input type="time" class="form-control dep" id="std" name="std" value="{{obj.std|time:'H:i'}}" id="inputPassword18" placeholder="Heure départ" required>
+                {% endif %}
+                {% else %}
+                <input type="time" class="form-control dep flt" id="std" name="std" id="inputPassword18" placeholder="Heure départ" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="inputPassword19" class="col-form-label">Destination</label>
+                {% if 'DETAIL' in title %}
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="text" class="form-control" name="dest" value="{{obj.dest}}" id="inputPassword19" placeholder="Password" readonly required>
+                {% else %}
+                <input type="text" class="form-control" name="dest" value="{{obj.dest}}" id="inputPassword19" placeholder="Destination" required>
+                {% endif %}
+                {% else %}
+                <input type="text" class="form-control" name="dest" id="inputPassword19" placeholder="Destination" required>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if 'AJOUT' not in title and act == 'OCCASIONNEL' %}
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h4 class="mb-0" style="font-weight: bolder !important;"><b>MONTANT PREVUS : &nbsp;&nbsp; {{obj.montant_prevus}} USD</b></h4>
+    </div>
+    {% endif %}
+    <!-- POST-VOL -->
+    {% if 'DETAIL' in title %}
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h4 style="font-weight: bolder !important;"><b>POST VOL</b></h4>
+        {% if obj.ata is not None %}
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>INFORMATIONS DU VOL</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #B01212 !important;">
+        <h6 class='mt-5'><b>ARRIVÉE</b> &nbsp;&nbsp;<span style="color: black !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="act_dte_arr" class="col-form-label">ACT DTE ARR</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="date" class="form-control" name="act_dte_arr" value="{{obj.act_dte_arr|date:'Y-m-d'}}" id="act_dte_arr" placeholder="Password" readonly>
+                {% else %}
+                <input type="date" class="form-control" name="act_dte_arr" value="{{obj.act_dte_arr|date:'Y-m-d'}}" id="act_dte_arr" placeholder="ADA">
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="ata" class="col-form-label">ATA</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="time" class="form-control" name="ata" value="{{obj.ata|time:'H:i'}}" id="ata" placeholder="Password" readonly>
+                {% else %}
+                <input type="time" class="form-control" name="ata" value="{{obj.ata|time:'H:i'}}" id="ata" placeholder="ATA">
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="pax_arriv" class="col-form-label">PAX ARRIVEE</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="number" min="0" class="form-control" name="pax_arriv" value="{{obj.pax_arriv}}" id="pax_arriv" placeholder="Password" readonly>
+                {% else %}
+                <input type="number" min="0" class="form-control" name="pax_arriv" value="{{obj.pax_arriv}}" id="pax_arriv" placeholder="nb pax">
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="cargo_arriv" class="col-form-label">CGO ARRIVEE (KG)</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="number" min="0" class="form-control" name="cargo_arriv" value="{{obj.cargo_arriv}}" id="cargo_arriv" placeholder="Password" readonly>
+                {% else %}
+                <input type="number" min="0" class="form-control" name="cargo_arriv" value="{{obj.cargo_arriv}}" id="cargo_arriv" placeholder="CGO">
+                {% endif %}
+            </div>
+        </div>
+        <h6 class='mt-5'><b>DÉPART</b> &nbsp;&nbsp;<span style="color: black !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="act_dte_dep" class="col-form-label">ACT DTE DEP</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="date" class="form-control" name="act_dte_dep" value="{{obj.act_dte_dep|date:'Y-m-d'}}" id="act_dte_dep" placeholder="Password" readonly>
+                {% else %}
+                <input type="date" class="form-control" name="act_dte_dep" value="{{obj.act_dte_dep|date:'Y-m-d'}}" id="act_dte_dep" placeholder="ADD">
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="atd" class="col-form-label">ATD</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="time" class="form-control" name="atd" value="{{obj.atd|time:'H:i'}}" id="atd" placeholder="atd" readonly>
+                {% else %}
+                <input type="time" class="form-control" name="atd" value="{{obj.atd|time:'H:i'}}" id="atd" placeholder="ATD">
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="cargo_dep" class="col-form-label">CGO DEPART (KG)</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="number" min="0" class="form-control" name="cargo_dep" value="{{obj.cargo_dep}}" id="cargo_dep" placeholder="Password" readonly>
+                {% else %}
+                <input type="number" min="0" class="form-control" name="cargo_dep" value="{{obj.cargo_dep}}" id="cargo_dep" placeholder="CGO">
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="pax_dep" class="col-form-label">PAX DEPART</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="number" min="0" class="form-control" name="pax_dep" value="{{obj.pax_dep}}" id="pax_dep" placeholder="Password" readonly>
+                {% else %}
+                <input type="number" min="0" class="form-control" name="pax_dep" value="{{obj.pax_dep}}" id="pax_dep" placeholder="nb pax">
+                {% endif %}
+            </div>
+        </div>
+        <h6 class='mt-5'><b>AUTRES</b> &nbsp;&nbsp;<span style="color: black !important;"></span></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="parking" class="col-form-label">PARKING</label>
+                {% if obj|if_readonly or obj|flight_cnl %}
+                <input type="text" class="form-control" name="atd" value="{{obj.parking}}" id="parking" placeholder="Password" readonly>
+                {% else %}
+                <input type="text" class="form-control" name="atd" value="{{obj.parking}}" id="parking" placeholder="ADD">
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2 ml-3 pl-5 pt-5">
+                <input type="checkbox" class="form-check-input"name='assist_jourferie' id="assist_jourferie" {% if obj.assist_jourferie %} checked disabled {% else %} '' {% endif %}>
+                <label class="form-check-label" for="assist_jourferie"><b>Jour férié</b></label>
+            </div>
+        </div>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>SERVICES PASSAGERS</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #B01212 !important;">
+        <div class="form-row mt-4">
+            <label for="ASSIST_UM" class="col-form-label col-md-3 text-right">ASSISTANCE UM</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ASSIST_UM}}" id="ASSIST_UM" name="ASSIST_UM" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR PMR</small>
+            </div>
+            <label for="ASSIST_WCH" class="col-form-label col-md-3 text-right">ASSISTANCE WCH</label> 
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ASSIST_WCH}}" id="ASSIST_WCH" name="ASSIST_WCH" placeholder="WCH" required readonly readonly>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="ASSIST_TRANSIT" class="col-form-label col-md-3 text-right">ASSISTANCE EN TRANSIT</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ASSIST_TRANSIT}}" id="ASSIST_TRANSIT" name="ASSIST_TRANSIT" placeholder="Nombre d'op" required readonly readonly>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="ACC_SALON" class="col-form-label col-md-3 text-right">ACCES AU SALON</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ACC_SALON}}" id="ACC_SALON" name="ACC_SALON" placeholder="Nombre d'op" required readonly readonly>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="ASSIST_VIP" class="col-form-label col-md-3 text-right">ASSISTANCE VIP</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ASSIST_VIP}}" id="ASSIST_VIP" name="ASSIST_VIP" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="USE_DCS" class="col-form-label col-md-3 text-right">UTILISATION DCS</label> 
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.USE_DCS}}" id="USE_DCS" name="USE_DCS" placeholder="WCH" required readonly readonly>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="DEPORTEE" class="col-form-label col-md-3 text-right">DEPORTEE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.DEPORTEE}}" id="DEPORTEE" name="DEPORTEE" placeholder="Nombre d'op" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="AGENT_SERV_PASSAGE" class="col-form-label col-md-3 text-right">AGENT DE SERVICE PASSAGER</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.AGENT_SERV_PASSAGE}}" id="AGENT_SERV_PASSAGE" name="AGENT_SERV_PASSAGE" placeholder="Nombre d'op" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="CIVIERE" class="col-form-label col-md-3 text-right">CIVIERE ( STCR )</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.CIVIERE}}" id="CIVIERE" name="CIVIERE" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="HUM" class="col-form-label col-md-3 text-right">HUM</label> 
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.HUM}}" id="HUM" name="HUM" placeholder="WCH" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="OUV_DOSS_BAG" class="col-form-label col-md-3 text-right">OUVERTURE DE DOSSIER BAGAGE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.OUV_DOSS_BAG}}" id="OUV_DOSS_BAG" name="OUV_DOSS_BAG" placeholder="Nombre d'op" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="DOSS_VOL_IMP" class="col-form-label col-md-3 text-right">DOSSIER DE VOL ET IMPRESSION</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.DOSS_VOL_IMP}}" id="DOSS_VOL_IMP" name="DOSS_VOL_IMP" placeholder="Nombre d'op" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="AGENT_COORD" class="col-form-label col-md-3 text-right">AGENT DE COORDINATION</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.AGENT_COORD}}" id="AGENT_COORD" name="AGENT_COORD" placeholder="Nombre d'op" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="COMM_SOL_COCKPIT" class="col-form-label col-md-3 text-right">COMMUNICATION SOL COCKPIT</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.COMM_SOL_COCKPIT}}" id="COMM_SOL_COCKPIT" name="COMM_SOL_COCKPIT" placeholder="Nombre d'op" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="AGENT_OP_QUALIF" class="col-form-label col-md-3 text-right">AGENT D'OPERATIONS QUALIFIE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.AGENT_OP_QUALIF}}" id="AGENT_OP_QUALIF" name="AGENT_OP_QUALIF" placeholder="Nombre d'op" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+        </div>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>SERVICES RAMP / PISTE</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #B01212 !important;">
+        <div class="form-row mt-4">
+            <label for="GPU" class="col-form-label col-md-3 text-right">GPU</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.GPU}}" id="GPU" name="GPU" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">MINUTES</small>
+            </div>
+            <label for="ASU" class="col-form-label col-md-3 text-right">ASU</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ASU}}" id="ASU" name="ASU" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="ACU" class="col-form-label col-md-3 text-right">ACU</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ACU}}" id="ACU" name="ACU" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="VIDE_TOILET" class="col-form-label col-md-3 text-right">VIDE TOILETTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.VIDE_TOILET}}" id="VIDE_TOILET" name="VIDE_TOILET" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="PLEIN_WATER" class="col-form-label col-md-3 text-right">PLEIN D'EAU</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.PLEIN_WATER}}" id="PLEIN_WATER" name="PLEIN_WATER" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="NET_CABINE" class="col-form-label col-md-3 text-right">NETTOYAGE CABINE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.NET_CABINE}}" id="NET_CABINE" name="NET_CABINE" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="ARRANGEMENT_CAB" class="col-form-label col-md-3 text-right">ARRANGEMENT CABINE & CHANGEMENT TETIERES</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ARRANGEMENT_CAB}}" id="ARRANGEMENT_CAB" name="ARRANGEMENT_CAB" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="RECONC_BAG_BRS" class="col-form-label col-md-3 text-right">RECONCILIATION BAGAGE BRS</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.RECONC_BAG_BRS}}" id="RECONC_BAG_BRS" name="RECONC_BAG_BRS" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="ID_BAG" class="col-form-label col-md-3 text-right">IDENTIFICATION BAGAGE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ID_BAG}}" id="ID_BAG" name="ID_BAG" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="PASSERELLE_PSG" class="col-form-label col-md-3 text-right">PASSERELLE PASSAGER</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.PASSERELLE_PSG}}" id="PASSERELLE_PSG" name="PASSERELLE_PSG" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="CAMION_ELEV" class="col-form-label col-md-3 text-right">CAMION ELEVATEUR</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.CAMION_ELEV}}" id="CAMION_ELEV" name="CAMION_ELEV" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="VIP_BUS" class="col-form-label col-md-3 text-right">VIP BUS</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.VIP_BUS}}" id="VIP_BUS" name="VIP_BUS" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR ROTATION</small>
+            </div>
+            <label for="VEHICULE_TRANSP_PISTE" class="col-form-label col-md-3 text-right">VEHICULE-TRANSPORT PISTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.VEHICULE_TRANSP_PISTE}}" id="VEHICULE_TRANSP_PISTE" name="VEHICULE_TRANSP_PISTE" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR ROTATION</small>
+            </div>
+            <label for="PUSH_BACK" class="col-form-label col-md-3 text-right">PUSH BACK</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.PUSH_BACK}}" id="PUSH_BACK" name="PUSH_BACK" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="TOWING" class="col-form-label col-md-3 text-right">TOWING</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.TOWING}}" id="TOWING" name="TOWING" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="CHARIOT_BAG" class="col-form-label col-md-3 text-right">CHARIOT BAGAGES</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.CHARIOT_BAG}}" id="CHARIOT_BAG" name="CHARIOT_BAG" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="TRACT_CHARIOT" class="col-form-label col-md-3 text-right">TRACTEUR DE CHARIOTS</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.TRACT_CHARIOT}}" id="TRACT_CHARIOT" name="TRACT_CHARIOT" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="TAPIS_BAG" class="col-form-label col-md-3 text-right">TAPIS A BAGAGES</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.TAPIS_BAG}}" id="TAPIS_BAG" name="TAPIS_BAG" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="PLATEFORME" class="col-form-label col-md-3 text-right">PLATEFORME</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.PLATEFORME}}" id="PLATEFORME" name="PLATEFORME" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="PORTE_CONTAINER_PALETTE" class="col-form-label col-md-3 text-right">PORTE CONTAINER-PALETTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.PORTE_CONTAINER_PALETTE}}" id="PORTE_CONTAINER_PALETTE" name="PORTE_CONTAINER_PALETTE" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="CONTAINER_PALETTE" class="col-form-label col-md-3 text-right">CONTAINER-PALETTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.CONTAINER_PALETTE}}" id="CONTAINER_PALETTE" name="CONTAINER_PALETTE" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="ELEV_FOURCHE" class="col-form-label col-md-3 text-right">ELEVATEUR A FOURCHE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.ELEV_FOURCHE}}" id="ELEV_FOURCHE" name="ELEV_FOURCHE" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="AGENT_SERV_PISTE" class="col-form-label col-md-3 text-right">AGENT DE SERVITUDE PISTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" value="{{obj.AGENT_SERV_PISTE}}" id="AGENT_SERV_PISTE" name="AGENT_SERV_PISTE" placeholder="UM" required readonly readonly>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="DB_MANIP_ULD" class="col-form-label col-md-3 text-right">DOUBLE MANIPUALATION DES ULD</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0"  class="form-control" id="DB_MANIP_ULD" value="{{obj.DB_MANIP_ULD}}" name="DB_MANIP_ULD" placeholder="UM" required readonly>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+        </div>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>FACTURE (USD)</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #B01212 !important;">
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="inputPassword4" class="col-form-label">Montant facture</label>
+                <input type="number" min="0" step="0.01" class="form-control montant_globale" name="montant_globale" value="{{montant_usd}}" id="inputPassword4" placeholder="Montant" readonly>
+                <!-- {% if obj.etat_du_vol == 'OPERE' and obj.montant_globale != None or obj.etat_du_vol == 'ANNULE' or obj|flight_cnl %}
+                <input type="number" min="0" class="form-control montant_globale" name="montant_globale" value="{{obj.montant_globale}}" id="inputPassword4" placeholder="N° Fiche" readonly>
+                {% else %}
+                <input type="number" min="0" step="0.01" class="form-control montant_globale" name="montant_globale" value="{{obj.montant_globale}}" id="inputPassword4" placeholder="Montant">
+                {% endif %} -->
+            </div>
+        </div>
+        {% else %}
+        <h2 style="font-weight: bolder !important;">En attente des informations ...</h2>
+        {% endif %}
+    </div>
+    {% endif %}
+    <!-- RELEVE DES TOUCHEES -->
+    {% if obj.etat_du_vol == 'OPERE' and comp.activite == 'CONTRACTUEL' %}
+    <div id="relevee" class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h4 style="font-weight: bolder !important;"><b>RELEVÉ DE TOUCHÉE</b></h4>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="tarif_de_base" class="col-form-label">Tarif de base - <b> {{monnaie}}</b> </label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" step="0.01" min="0" class="form-control" name="tarif_de_base" value="{{obj.tarif_de_base}}" id="tarif_de_base" placeholder="Tarif de base" readonly>
+                {% else %}
+                <input type="number" step="0.01" min="0" class="form-control" name="tarif_de_base" value="0" id="tarif_de_base" placeholder="Tarif de base" required>
+                {% endif %}
+            </div>
+            <!-- <div class="form-group col-md-3">
+                <label for="dcs" class="col-form-label">DCS - <b>{{monnaie}} </b> </label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" step="0.01" min="0" class="form-control" name="dcs" value="{{obj.dcs}}" placeholder="Montant" readonly>
+                {% else %}
+                <input type="number" step="0.01" min="0" class="form-control" name="dcs" value="{{obj.dcs}}" placeholder="Montant" required>
+                {% endif %}
+            </div> -->
+            <div class="form-group col-md-3">
+                <label for="extra_service" class="col-form-label">Extras charge PASSAGERS & PISTE - <b>{{monnaie}} </b></label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" min="0" step="0.01" class="form-control" name="extra_service" value="{{obj.extra_service}}" id="extra_service" placeholder="Montant" readonly>
+                {% else %}
+                <input type="number" min="0" step="0.01" class="form-control" name="extra_service" value="0" id="extra_service" placeholder="Montant" required>
+                {% endif %}
+            </div>
+            <!-- <div class="form-group col-md-2">
+                <label for="reduction" class="col-form-label">Réduction (%)</label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" min="0" max="100" step="0.01" class="form-control" name="reduction" value="{{obj.reduction}}" id="reduction" placeholder="Montant" readonly>
+                {% else %}
+                <input type="number" min="0" max="100" step="0.01" class="form-control" name="reduction" value="0" id="reduction" placeholder="Montant" required>
+                {% endif %}
+            </div> -->
+        </div>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>MAJORATIONS</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #B01212 !important;">
+        <div class="form-row mb-4">
+            <div class="form-group col-md-2">
+                <label for="major_night" class="col-form-label">Majoration nuit (%)</label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major" name="major_night" value="{{obj.major_night}}" id="major_night" placeholder="Montant" readonly>
+                {% else %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major" name="major_night" value="0" id="major_night" placeholder="Montant" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="major_weekend" class="col-form-label">Majoration weekend (%)</label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major" name="major_weekend" value="{{obj.major_weekend}}" id="major_weekend" placeholder="Montant" readonly>
+                {% else %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major" name="major_weekend" value="0" id="major_weekend" placeholder="Montant" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="major_jourferie" class="col-form-label">Majoration jour férié (%)</label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major" name="major_jourferie" value="{{obj.major_jourferie}}" id="major_jourferie" placeholder="Montant" readonly>
+                {% else %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major" name="major_jourferie" value="0" id="major_jourferie" placeholder="Montant" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="major_standby" class="col-form-label">Majoration standby (%)</label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major" name="major_standby" value="{{obj.major_standby}}" id="major_standby" placeholder="Montant" readonly>
+                {% else %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major" name="major_standby" value="0" id="major_standby" placeholder="Montant" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-4">
+                <label for="majoration" class="col-form-label">Majoration TOTALE (%)</label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major_tot" name="majoration" value="{{obj.majoration}}" id="majoration" placeholder="Montant" readonly>
+                {% else %}
+                <input type="number" step="0.01" min="0" max="100" class="form-control major_tot" name="majoration" value="0" id="majoration" placeholder="Montant" required>
+                {% endif %}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="reduction" class="col-form-label">Réduction (%)</label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" min="0" max="100" step="0.01" class="form-control" name="reduction" value="{{obj.reduction}}" id="reduction" placeholder="Montant" readonly>
+                {% else %}
+                <input type="number" min="0" max="100" step="0.01" class="form-control" name="reduction" value="0" id="reduction" placeholder="Montant" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="reduction" class="col-form-label">Retard (%)</label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" min="0" max="100" step="0.01" class="form-control" name="retard" value="{{obj.retard}}" id="retard" placeholder="Retard" readonly>
+                {% else %}
+                <input type="number" min="0" max="100" step="0.01" class="form-control" name="retard" value="0" id="retard" placeholder="Retard" required>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+                <label for="reduction" class="col-form-label">Annulation (%)</label>
+                {% if obj.montant_globale is not None %}
+                <input type="number" min="0" max="100" step="0.01" class="form-control" name="annulation" value="{{obj.annulation}}" id="annulation" placeholder="Annulation" readonly>
+                {% else %}
+                <input type="number" min="0" max="100" step="0.01" class="form-control" name="annulation" value="0" id="annulation" placeholder="Annulation" required>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if 'DETAIL' in title %}
+    {% if obj.n_facture != None and obj.fiche_received or obj|if_late %}
+    <button type="submit" id="submit-form" class="btn" style="color: white !important; background-color: #0e385b !important;" disabled><b>Modifier</b></button>
+    {% else %}
+    <button type="submit" id="submit-form" class="btn" style="color: white !important; background-color: #0e385b !important;"><b>Modifier</b></button>
+    {% endif %}
+    {% else %}
+    <button type="submit" id="submit-form" class="btn" style="color: white !important; background-color: #0e385b !important;" disabled><b>AJOUTER</b></button>
+    {% endif %}
+  </form>
+
+</div>
+
+    <script>
+
+        $('#printer').on('click', function(){
+            var today = new Date();
+            var dd = today.getDate();
+            var mm = today.getMonth() + 1;
+    
+            var yyyy = today.getFullYear();
+            if (dd < 10) {
+                dd = '0' + dd;
+            }
+            if (mm < 10) {
+                mm = '0' + mm;
+            }
+            var date = dd + '/' + mm + '/' + yyyy;
+            var min = today.getMinutes();
+            if(min < 10){
+                min = '0' + min;
+            }
+            var time = today.getHours() + ":" + min;
+            var tagid = "to_print";
+            var hashid = "#"+ tagid;
+            var tagname =  $(hashid).prop("tagName").toLowerCase() ;
+            var attributes = ""; 
+            var attrs = document.getElementById(tagid).attributes;
+              $.each(attrs,function(i,elem){
+                attributes +=  " "+  elem.name+" ='"+elem.value+"' " ;
+              })
+            var divToPrint = '<span class="h5" style="margin-bottom: 50px !important;">Le ' + date + ', ' + time + '</span></br>' + $(hashid).html() ;
+            var head = "<html><head>"+ $("head").html() + "</head>" ;
+            var allcontent = head + "<body onload='window.print(); ' >"+  divToPrint +  "</body></html>"  ;
+            var newWin=window.open('','Print-Window');
+            newWin.document.open();
+            newWin.document.write(allcontent);
+            newWin.document.close();
+        });
+
+
+        $('.major').on('focus', function(){
+            if($(this).val() == '0'){
+                $(this).val('');
+            }
+        });
+
+        $('.major').on('focusout', function(){
+            if($(this).val() == ''){
+                $(this).val('0');
+            }
+        });
+
+        $('.major').on('keyup', function(){
+            night = parseInt($('#major_night').val())
+            weekend = parseInt($('#major_weekend').val())
+            ferie = parseInt($('#major_jourferie').val())
+            standby = parseInt($('#major_standby').val())
+            if( parseInt($('.major_tot').val()) + parseInt($(this).val()) <= 100){
+                $('.major_tot').val(night + weekend + ferie + standby);
+            }
+            else{
+                $('.major_tot').val(100);
+            }
+        });
+
+        var typingTimer_key;
+
+        $('.flt').on('keyup change', function(event){
+            clearTimeout(typingTimer_key);
+            console.log($('.flt').val())
+            typingTimer_key = setTimeout(function(){doneTypingKEY(event)}, 500);
+        });
+
+        $('.flt').on('keydown', function(event){
+            clearTimeout(typingTimer_key);
+        });
+
+        function doneTypingKEY (e) {
+            if($(e.target).is('#sta') || $(e.target).is('#prov') || $(e.target).is('#date_arrivee') || $(e.target).is('#n_vol_arr') || $(e.target).is('#escale')){
+                ajax_key('arr', '#alert_arr_key', '#message_arr_key');
+            }
+            else{
+                ajax_key('dep', '#alert_dep_key', '#message_dep_key');
+            }
+        }
+
+        function ajax_key(mode, alert, msg){
+            data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+            'std' : $('#std').val(),
+            'date_depart' : $('#date_depart').val(),
+            'escale' : $('#escale').val(),
+            'n_vol_arr' : $('#n_vol_arr').val(),
+            'date_arrivee' : $('#date_arrivee').val(),
+            'prov' : $('#prov').val(),
+            'sta' : $('#sta').val(),
+            'mode' : mode
+            };
+            $.ajax({
+                type:'POST',
+                url:'{% url "core:valid-uniq-flt" %}',
+                datatype: 'JSON',
+                data: data,
+                success: function(data){
+                    if(data.exist){
+                        if($(alert).children().length > 0){
+                            // $(msg).slideToggle("slow");
+                            $(alert).find('.msg').remove();
+                            $(alert).append('<p class="msg"><b>' + data.msg + '</b></p>');
+                            $('#submit-form').prop('disabled', true);
+                        }
+                        else{
+                            $(alert).append('<p class="msg"><b>' + data.msg + '</b></p>');
+                            $(msg).slideToggle("slow");
+                            $('#submit-form').prop('disabled', true);
+                        }
+                    }
+                    else{
+                        if($(alert).children().length > 0){
+                            $(msg).slideToggle("slow");
+                            $(alert).find('.msg').remove()
+                            $(msg).removeClass($(msg).attr('class').split(' ').pop());
+                            if($('#compagnie_dispatcher').val() != "('', '---------')"  && $('#alert_dep_key').children().length < 1 && $('#alert_arr_key').children().length < 1){
+                                $('#submit-form').prop('disabled', false);
+                            }
+                        }
+                    }
+                }
+            })
+        };
+
+        $('#locked').on('change', function(){
+            var chk = $(this).is(':checked');
+            if(!chk){
+                $(':input').not('.montant_globale').not('.search').prop('readonly', false);
+                $('#fiche_phys_received').prop('disabled', false);
+                $('#escale').prop('disabled', false);
+                $('#submit-form').prop('disabled', false);
+            }
+            else{
+                $(':input').not('.montant_globale').not('.search').prop('readonly', true);
+                $('#fiche_phys_received').prop('disabled', true);
+                $('#escale').prop('disabled', true);
+                $('#submit-form').prop('disabled', true);
+            }
+        });
+
+        var typingTimer_dep;
+        var typingTimer_arr;
+        var typingTimer_dem
+
+        $('.demande').on('keyup', function(event){
+            clearTimeout(typingTimer_dem);
+            typingTimer_dem = setTimeout(function(){doneTypingDem(event)}, 500);
+        });
+
+        $('.demande').on('keydown', function(event){
+            clearTimeout(typingTimer_dem);
+        });
+
+        $('.arr').on('keyup', function (event) {
+            clearTimeout(typingTimer_arr);
+            typingTimer_arr = setTimeout(function(){doneTypingArr(event)}, 500);
+        });
+
+        $('.arr').on('keydown', function () {
+            clearTimeout(typingTimer_arr);
+        });
+
+        $('.dep').on('keyup', function (event) {
+            clearTimeout(typingTimer_dep);
+            typingTimer_dep = setTimeout(function(){doneTypingDep(event)}, 500);
+        });
+
+        $('.dep').on('keydown', function () {
+            clearTimeout(typingTimer_dep);
+        });
+
+        function ajax_job(elt, alert, msg){
+            var change;
+            var demande;
+            if(elt == '#sta' || elt == '#std'){
+                change = 'time';
+            }
+            else{
+                change = 'date';
+            }
+            if(elt == '#date_demande'){
+                demande = true;
+            }
+            else{
+                demande = false;
+            }
+            data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+            'date_demande' : $('#date_demande').val(),
+            'date_arrivee' : $('#date_arrivee').val(), 'sta': $('#sta').val(),
+            'date_depart' : $('#date_depart').val(), 'std' : $('#std').val(),
+            'actual' : $(elt).val(), 'change' : change, 'demande' : demande};
+            $.ajax({
+                type:'POST',
+                url:"{% url 'core:valid-date' %}",
+                datatype: 'JSON',
+                data: data,
+                success: function(data){
+                    // console.log(data)
+                    if($(alert).children().length > 0){
+                        $(msg).slideToggle("slow");
+                        $(alert).find('.msg').remove();
+                    }
+                    if($('#alert_arr').children().length > 0 && $('#alert_arr').children().hasClass('post')){
+                        $('#message_arr').slideToggle("slow");
+                        $('#alert_arr').find('.msg').remove();
+                    }
+                    if(data.etat_dt || data.etat_date){
+                        $('#alert_arr').append('<p class="msg post"><b>la date de départ doit être postérieure à la date d\'arrivée !</b></p>');
+                        $('#message_arr').slideToggle("slow");
+                        document.getElementById('submit-form').disabled = true;
+                    }
+                    else if(data.etat){
+                        console.log('XXX')
+                        $(alert).append('<p class="msg"><b>La date saisie n\'est pas valide !</b></p>');
+                        $(msg).slideToggle("slow");
+                        document.getElementById('submit-form').disabled = true;
+                    }
+                    else{
+                        if(elt == '#date_arrivee'){
+                            other = '#alert_dep'
+                        }
+                        else{
+                            other = '#alert_arr'
+                        }
+                        if( $(other).children().length < 1 && $('#compagnie_dispatcher').val() != "('', '---------')" && $("#alert_dep_key").children().length < 1 && $("#alert_arr_key").children().length < 1){
+                            console.log($("alert_arr_key").children().length)
+                            console.log($("alert_dep_key").children().length)
+                            console.log('XXXXXXXXXXXX')
+                            document.getElementById('submit-form').disabled = false;
+                        }
+                    }
+                }
+            });
+        }
+
+        function doneTypingArr (e) {
+            if($(e.target).is('#sta')){
+                ajax_job('#sta', '#alert_arr', '#message_arr');
+            }
+            else{
+                ajax_job('#date_arrivee', '#alert_arr', '#message_arr');
+            }
+        }
+
+        function doneTypingDep (e) {
+            if($(e.target).is('#std')){
+                ajax_job('#std', '#alert_dep', '#message_dep');
+            }
+            else{
+                ajax_job('#date_depart', '#alert_dep', '#message_dep');
+            }
+        }
+
+        function doneTypingDem(e){
+            ajax_job('#date_demande', '#alert_dem', '#message_dem');
+        }
+
+        $('#compagnie_dispatcher').change(function(){
+            data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+            'company' : $('#compagnie_dispatcher').val()};
+            $.ajax({
+                type:'POST',
+                url:'{% url "core:valid-company" %}',
+                datatype: 'JSON',
+                data: data,
+                success: function(data){
+                    if(data.exs){
+                        document.getElementById('mode_paiement').disabled = false;
+                        if($('#alert_dep_key').children().length < 1 && $('#alert_arr_key').children().length < 1){
+                            document.getElementById('submit-form').disabled = false;
+                        }
+                        // if(data.activite == 'OCCASIONNEL'){
+                        //     document.getElementById('mode_paiement').disabled = false;
+                        //     if (data.status == 'alert-danger'){
+                        //         document.getElementById('submit-form').disabled = true;
+                        //     }
+                        //     else{
+                        //         document.getElementById('submit-form').disabled = false;
+                        //     }
+                        // }
+                        // else{
+                        //     document.getElementById('submit-form').disabled = false;
+                        // }
+                        // console.log('JS : True')
+                        if($('#alert').children().length > 0){
+                            $('#alert').find('.msg').remove();
+                            var lastClass = $('#message').attr('class').split(' ').pop();
+                            $('#message').removeClass(lastClass);
+                            $('#message').slideToggle('slow');
+                        }
+                        document.getElementById('monnaieSelect').value = data.monnaie
+                        for ( var i = 0; i < document.getElementById('monnaieSelect').options.length; i++ ) {
+                            // console.log(document.getElementById('monnaieSelect').options[i].value)
+                            if ( document.getElementById('monnaieSelect').options[i].value == data.monnaie ) {
+                                // console.log('DONE')
+                                document.getElementById('monnaieSelect').options[i].selected = true;
+                            }
+                        }
+                        if(data.activite == 'OCCASIONNEL'){
+                            $('#message').addClass(data.status);
+                            if(data.other_currency != 'USD'){
+                                $('#alert').append('<p class="msg">Solde estimé actuel : <b>' + data.solde_est + ' USD' + '<b/></br>' + 
+                                'EXCHANGE : ' + data.other_montant + ' ' + data.other_currency + '</p>');
+                            }
+                            else{
+                                $('#alert').append('<p class="msg">Solde estimé actuel : <b>' + data.solde_est + ' USD' + '<b/></p>');
+                            }
+                            $("#message").slideToggle("slow");
+                        }
+                        else{
+                            document.getElementById('mode_paiement').value = 'CONTRAT';
+                            document.getElementById('mode_paiement').disabled = true;
+                        }
+                    }
+                    else{
+                        // console.log('JS : FALSE')
+                        document.getElementById('submit-form').disabled = true;
+                        if($('#alert').children().length > 0){
+                            $("#message").slideToggle("slow");
+                            $('#alert').find('.msg').remove()
+                            $('#message').removeClass($('#message').attr('class').split(' ').pop())
+                            // $('#message').hide()
+                        }
+                    }
+                }
+            });
+        });
+   
+        $('form').submit(function(e) {
+            $(':disabled').each(function(e) {
+                $(this).removeAttr('disabled');
+            })
+        });
+
+        
+   </script>
+
+
+{% endblock content %}

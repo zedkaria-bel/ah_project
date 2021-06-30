@@ -1,0 +1,147 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+{% load i18n %}
+{% block head_title %}
+Etat des demandes (Vols OCCAS.)
+{% endblock head_title %}
+
+{% block content %}
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+    <b class="font-weight-bold h4">{{ message }}</b>
+    <button type="button" class="close align-items-center" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="table-responsive">
+    <table class="table">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col"><b>#</b></th>
+            <th scope="col"><b>Date de demande</b></th>
+            <th scope="col"><b>Compagnie dispatcher</b></th>
+            <th scope="col"><b>Mode de paiement</b></th>
+            <th scope="col"><b>Nature touchée</b></th>
+            <th scope="col"><b>Date arrivée</b></th>
+            <th scope="col"><b>Prov</b></th>
+            <!-- <th scope="col"><b>N° Fiche touchée</b></th> -->
+            <th scope="col"><b>ETAT</b></th>
+            <th scope="col"><b>More details</b></th>
+          </tr>
+        </thead>
+        <tbody>
+            {% for request in object_list %}
+            <tr class="row_tab">
+                <th scope="row"><b>{{ forloop.counter0|add:page_obj.start_index }}</b></th>
+                <td><b>
+                    {% language 'fr' %}
+                        {{request.date_demande|date:"d F Y"}}
+                    {% endlanguage %}
+                    </b></td>
+                <td><b>{{request.compagnie_dispatcher}}</b></td>
+                <td><b>{{request.mode_paiement}}</b></td>
+                <!-- {% if request.etat_du_vol != 'OPERE' and request.etat_du_vol != 'ANNULE' %}
+                {% if request.compagnie_dispatcher|get_solde_est|make_list|first == '-' %}
+                <td><b style="color: red !important;">{{request.compagnie_dispatcher|get_solde_est}} $</b></td>
+                {% else %}
+                <td><b>{{request.compagnie_dispatcher|get_solde_est}} $</b></td>
+                {% endif %}
+                {% else %}
+                <td><b></b></td>
+                {% endif %} -->
+                <td><b>{% if request.nature_touchee is not None %}{{request.nature_touchee}} {% endif %}</b></td>
+                <td><b>
+                    {% language 'fr' %}
+                        {{request.date_arrivee|date:"d F Y"}}
+                    {% endlanguage %}
+                    </b></td>
+                <td><b>{{request.prov}}</b></td>
+                <!-- <td><b>{{request.n_fiche_touchee|floatformat}}</b></td> -->
+                <td><b>
+                    {% if request.etat_du_vol == 'OPERE' %}
+                    <span title="OPERE">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="green" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                        </svg>
+                    </span>
+                    {% elif request.etat_du_vol == 'ANNULE' %}
+                    <span title="ANNULE">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="bi bi-x-circle-fill" viewBox="0 0 16 16">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                          </svg>
+                    </span>
+                    {% elif request.etat_du_vol == 'RE-SCHED' %}
+                    <span title="RE-SCHED">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16">
+                            <path d="M6.445 11.688V6.354h-.633A12.6 12.6 0 0 0 4.5 7.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61h.675zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82h-.684zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23z"/>
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                          </svg>
+                    </span>
+                    {% elif request.etat_du_vol == 'NO OP' %}
+                    <span title="NO OP">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="bi bi-slash-circle" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="M11.354 4.646a.5.5 0 0 0-.708 0l-6 6a.5.5 0 0 0 .708.708l6-6a.5.5 0 0 0 0-.708z"/>
+                         </svg>
+                    </span>
+                    {% else %}
+                    <span title="PROGRAMME">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-pause-btn" viewBox="0 0 16 16">
+                            <path d="M6.25 5C5.56 5 5 5.56 5 6.25v3.5a1.25 1.25 0 1 0 2.5 0v-3.5C7.5 5.56 6.94 5 6.25 5zm3.5 0c-.69 0-1.25.56-1.25 1.25v3.5a1.25 1.25 0 1 0 2.5 0v-3.5C11 5.56 10.44 5 9.75 5z"/>
+                            <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm15 0a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                          </svg>
+                    </span>
+                    {% endif %}
+                </b></td>
+                <td>
+                    <a href="{{request.get_absolute_url_post_vol}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">
+                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                        </svg>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}     
+        </tbody>
+    </table>
+    
+    <!-- PAGINATION -->
+    <nav aria-label="Page navigation example">   
+        <ul id="pagin" class="pagination pagination-lg justify-content-center pt-5">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+            <a class="page-link" href="?page=1" aria-label="Previous">
+                <span aria-hidden="true">PREVIOUS</span>
+                <span class="sr-only">begin</span>
+            </a>
+            </li>   {% endif %}
+            
+            {% for n in page_obj.paginator.page_range %}
+            {% if page_obj.number == n %}
+                <li class="page-item active page-active">
+                <span class="page-link">{{ n }}<span class="sr-only">(current)</span></span>
+                </li>
+            {% elif n > page_obj.number|add:'-5' and n < page_obj.number|add:'5' %}
+                <li class="page-item"><a class="page-link" href="?page={{ n }}">{{ n }}</a></li>
+            {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Next">
+                <span aria-hidden="true">NEXT</span>
+                <span class="sr-only">end</span>
+                </a>
+            </li>
+            {% endif %}   
+        </ul>
+    </nav>
+</div>
+{% endblock content %}

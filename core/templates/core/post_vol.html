@@ -1,0 +1,694 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+
+{% block head_title %}
+Relevé des touchées
+{% endblock head_title %}
+
+{% block content %}
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+    <b class="font-weight-bold h4">{{ message }}</b>
+    <button type="button" class="close align-items-center" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if 'DETAIL' in title %}
+<!-- <div class="mb-2">
+    <div class="user d-flex flex-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+            <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+            <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
+        </svg>
+        <p class="ml-2 text-muted font-weight-normal">Dernière modification effectué par : {{obj.user_last_edit}}</p>
+    </div>
+    <div class="time d-flex flex-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-fill" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+        </svg>
+        <p class="ml-2 text-muted font-weight-normal">{{obj.date_last_edit|date:'d F Y - H:i'}}</p>
+    </div>
+</div> -->
+{% endif %}
+
+<form method="POST" enctype="multipart/form-data" action="{% url 'core:valid-releve-touchee' %}" class="form">
+    {% csrf_token %}
+    <!-- INFOS DU VOL -->
+    <div class="shadow-lg p-3 mb-5 bg-white rounded w-100y">
+        <input type="hidden" id='n_field' name="n_field" value="{{obj.n_field}}" class="form-control">
+        <h4 style="font-weight: bolder !important;"><b>INFORMATIONS DU VOL</b></h4>
+        <div id="message_arr" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_arr" class="alert alert-danger alert-dismissible fade show" role="alert">
+            </div>
+        </div>
+        <h6 class='mt-5' style="font-weight: bolder !important;"><b>ARRIVÉE</b> &nbsp;&nbsp;<span style="color: gray !important;">SCHED-DATE : {{obj.date_arrivee|date:'d-m-Y'}}</span></h6>
+        <hr class='mt-0'>
+        <!-- ARRIVEE -->
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">N° Vol arrivée</label>
+                <input type="text" class="form-control" name="n_vol_arr" value="{{obj.n_vol_arr}}" id="inputPassword4" placeholder="N° Vol arrivée" readonly required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">ACT DTE ARR</label>
+                <input type="date" class="form-control arr" id="date_arrivee" name="act_dte_arr" id="inputPassword4" placeholder="Date arrivée" required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">STA</label>
+                <input type="time" class="form-control arr" id="sta" name="sta" value="{{obj.sta|time:'H:i'}}" id="inputPassword4" placeholder="Password" readonly required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">ATA</label>
+                <input type="time" class="form-control arr" id="ata" name="ata" placeholder="Password" required>
+            </div>
+            <div class="form-group col-md-1">
+                <label for="inputPassword4" class="col-form-label">Provenance</label>
+                <input type="text" class="form-control" name="prov" value="{{obj.prov}}" id="inputPassword4" placeholder="Password" readonly required>
+            </div>
+            <div class="form-group col-md-1">
+                <label for="inputPassword4" class="col-form-label">PAX ARRIVEE</label>
+                <input type="number" min="0" value="0" class="form-control" name="pax_arriv" id="inputPassword4" placeholder="nb pax" required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">CARGO ARRIVEE</label>
+                <input type="number" min="0" value="0" class="form-control" name="cargo_arriv" id="inputPassword4" placeholder="cargo_arriv" required>
+            </div>
+        </div>
+        <div id="message_dep" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_dep" class="alert alert-danger alert-dismissible fade show" role="alert">
+            </div>
+        </div>
+        <h6 class='mt-5' style="font-weight: bolder !important;"><b>DÉPART</b> &nbsp;&nbsp;<span style="color: gray !important;">SCHED-DATE : {{obj.date_depart|date:'d-m-Y'}}</span></h6>
+        <hr class='mt-0'>
+        <!-- DEPART -->
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">N° Vol départ</label>
+                <input type="text" class="form-control" name="n_vol_dep" value="{{obj.n_vol_dep}}" id="inputPassword4" placeholder="N° Vol départ" readonly required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">ACT DTE DEP</label>
+                <input type="date" class="form-control dep" id="date_depart" name="act_dte_dep" placeholder="Date départ" required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">STD</label>
+                <input type="time" class="form-control dep" id="std" name="std" value="{{obj.std|time:'H:i'}}" id="inputPassword4" placeholder="STD" readonly required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">ATD</label>
+                <input type="time" class="form-control dep" id="atd" name="atd" id="inputPassword4" placeholder="ATD" required>
+            </div>
+            <div class="form-group col-md-1">
+                <label for="inputPassword4" class="col-form-label">Destination</label>
+                <input type="text" class="form-control" name="dest" value="{{obj.dest}}" id="inputPassword4" placeholder="Destination" readonly required>
+            </div>
+            <div class="form-group col-md-1">
+                <label for="inputPassword4" class="col-form-label">PAX DEPART</label>
+                <input type="number" min="0" value="0" class="form-control" name="pax_dep" id="inputPassword4" placeholder="nb pax" required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">CARGO DEPART</label>
+                <input type="number" min="0" value="0" class="form-control" name="cargo_dep" id="inputPassword4" placeholder="cargo_dep" required>
+            </div>
+        </div>
+        <h6 class='mt-5' style="font-weight: bolder !important;"><b>AUTRES</b></h6>
+        <hr class='mt-0'>
+        <!-- AUTRES -->
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">Client à facturer</label>
+                <input type="text" class="form-control" name="cie_fact" value="{{obj.compagnie_dispatcher}}" id="inputPassword4" placeholder="N° Vol départ" required readonly>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="nature_touchee" class="col-form-label">NATURE TOUCHEE </label>
+                <select class="custom-select unlock-select" name="nature_touchee" id="nature_touchee" {% if obj.nature_touchee is not None %} disabled {% endif %} required>
+                    {% for nat in natures %}
+                    <option value="{{nat}}" {% if obj.nature_touchee == nat %} selected {% endif %}>{{nat}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-1">
+                <label for="inputPassword4" class="col-form-label">Type avion</label>
+                <input type="text" class="form-control" name="type_avion" value="{{obj.type_avion}}" id="inputPassword4" placeholder="type_avion" readonly required>
+            </div>
+            <div class="form-group col-md-1">
+                <label for="inputPassword4" class="col-form-label">MTOW (Tn)</label>
+                <input type="number" min="0" class="form-control" name="mtow_tonnes_field" {% if obj.mtow_tonnes_field is not None %} value="{{obj.mtow_tonnes_field}}" readonly {% endif %} id="inputPassword4" placeholder="MTOW" required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">Matricule avion</label>
+                <input type="text" min="0" class="form-control" name="reg" {% if obj.reg is not None %} value="{{obj.reg}}" readonly {% endif %} id="inputPassword4" placeholder="Matricule" required>
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="inputPassword4" class="col-form-label">Parking</label>
+                <input type="text" class="form-control" name="parking" id="inputPassword4" placeholder="parking" required>
+            </div>
+            <div class="form-group col-md-2 pl-5 mt-5">
+                <input type="checkbox" class="form-check-input" name='assist_jourferie' id="assist_jourferie">
+                <label class="form-check-label h5" for="assist_jourferie"><b>Jour férié</b></label>
+              </div>
+        </div>
+        <div id="message_fiche" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_fiche" class="alert alert-danger alert-dismissible fade show" role="alert">
+            </div>
+        </div>
+        <h6 class='mt-5' style="font-weight: bolder !important;"><b>FICHE TOUCHÉE</b></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">N° Fiche touchée</label>
+                <input type="number" min="0" class="form-control fiche" name="n_fiche_touchee" id="n_fiche_touchee" placeholder="N°" required>
+                <input type="hidden" id="fiche_hidden">
+            </div>
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">Importer fiche de touchée scannée</label>
+                <input type="file" class="form-control" name="fiche_touchee_file" id="fiche_touchee_file" />
+            </div>
+        </div>
+        <h6 class='mt-5' style="font-weight: bolder !important;"><b>FICHES TOUCHÉE ANNULÉES ( FACULTATIF )</b></h6>
+        <hr class='mt-0'>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">QUANTITÉ</label>
+                <select class="custom-select" id="fiche_cnl_mode">
+                    <option value="UNE SEULE" selected>UNE SEULE FICHE</option>
+                    <option value="PLUSIEURS">PLUSIEURS FICHES</option>
+                </select>
+            </div>
+            <div class="form-group col-md-3">
+                <label for="n_fiche_touchee_1" class="col-form-label">A PARTIR DE LA FICHE N°</label>
+                <input type="number" min="0" class="form-control fiche" name="n_fiche_touchee_1" id="n_fiche_touchee_1" placeholder="N°">
+                <input type="hidden" id="fiche_hidden_1">
+            </div>
+            <div class="form-group col-md-3">
+                <label for="n_fiche_touchee_2" class="col-form-label">JUSQU'A LA FICHE N° (INCLUE)</label>
+                <input type="number" min="0" class="form-control fiche" name="n_fiche_touchee_2" id="n_fiche_touchee_2" placeholder="N°" readonly>
+                <input type="hidden" id="fiche_hidden_2">
+            </div>
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">CAUSE DE L'ANNULATION</label>
+                <select name="cnl_cause_fiche" id="cnl_cause_fiche" class="custom-select" disabled>
+                    {% for cause in causes %}
+                    <option value="{{cause}}"> {{cause}} </option>
+                    {% endfor %}
+                    <option selected></option>
+                </select>
+            </div>
+            <div class="form-group col-md-12">
+                <label for="obs" class="col-form-label">OBSERVATION ( FACULTATIF )</label>
+                <textarea class="form-control" name="obs" id="obs" rows="3"></textarea>
+            </div>
+        </div>
+    </div>
+    <div id="message_psg" class="mt-2 pb-0 pt-0" style="display: none;">
+        <div id="alert_psg" class="alert alert-danger alert-dismissible fade show" role="alert">
+        </div>
+    </div>
+    <!-- SERVICES PSG -->
+    <div class="shadow-lg p-3 mb-5 bg-white rounded w-100y">
+        <h4 style="font-weight: bolder !important;"><b>SERVICES FACTURÉS</b></h4>
+        <div id="message_ramp" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_ramp" class="alert alert-danger alert-dismissible fade show" role="alert">
+            </div>
+        </div>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>SERVICES PASSAGERS</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #B01212 !important;">
+        <div class="form-row mt-4">
+            <label for="ASSIST_UM" class="col-form-label col-md-3 text-right">ASSISTANCE UM</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ASSIST_UM" name="ASSIST_UM" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR PMR</small>
+            </div>
+            <label for="ASSIST_WCH" class="col-form-label col-md-3 text-right">ASSISTANCE WCH</label> 
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ASSIST_WCH" name="ASSIST_WCH" placeholder="WCH" required>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="ASSIST_TRANSIT" class="col-form-label col-md-3 text-right">ASSISTANCE EN TRANSIT</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ASSIST_TRANSIT" name="ASSIST_TRANSIT" placeholder="Nombre d'op" required>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="ACC_SALON" class="col-form-label col-md-3 text-right">ACCES AU SALON</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ACC_SALON" name="ACC_SALON" placeholder="Nombre d'op" required>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="ASSIST_VIP" class="col-form-label col-md-3 text-right">ASSISTANCE VIP</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ASSIST_VIP" name="ASSIST_VIP" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="USE_DCS" class="col-form-label col-md-3 text-right">UTILISATION DCS</label> 
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="USE_DCS" name="USE_DCS" placeholder="WCH" required>
+                <small class="text-muted font-italic">PAR PASSAGER</small>
+            </div>
+            <label for="DEPORTEE" class="col-form-label col-md-3 text-right">DEPORTEE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="DEPORTEE" name="DEPORTEE" placeholder="Nombre d'op" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="AGENT_SERV_PASSAGE" class="col-form-label col-md-3 text-right">AGENT DE SERVICE PASSAGER</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="AGENT_SERV_PASSAGE" name="AGENT_SERV_PASSAGE" placeholder="Nombre d'op" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="CIVIERE" class="col-form-label col-md-3 text-right">CIVIERE ( STCR )</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="CIVIERE" name="CIVIERE" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="HUM" class="col-form-label col-md-3 text-right">HUM</label> 
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="HUM" name="HUM" placeholder="WCH" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="OUV_DOSS_BAG" class="col-form-label col-md-3 text-right">OUVERTURE DE DOSSIER BAGAGE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="OUV_DOSS_BAG" name="OUV_DOSS_BAG" placeholder="Nombre d'op" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="DOSS_VOL_IMP" class="col-form-label col-md-3 text-right">DOSSIER DE VOL ET IMPRESSION</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="DOSS_VOL_IMP" name="DOSS_VOL_IMP" placeholder="Nombre d'op" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="AGENT_COORD" class="col-form-label col-md-3 text-right">AGENT DE COORDINATION</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="AGENT_COORD" name="AGENT_COORD" placeholder="Nombre d'op" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="COMM_SOL_COCKPIT" class="col-form-label col-md-3 text-right">COMMUNICATION SOL COCKPIT</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="COMM_SOL_COCKPIT" name="COMM_SOL_COCKPIT" placeholder="Nombre d'op" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="AGENT_OP_QUALIF" class="col-form-label col-md-3 text-right">AGENT D'OPERATIONS QUALIFIE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="AGENT_OP_QUALIF" name="AGENT_OP_QUALIF" placeholder="Nombre d'op" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+        </div>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>SERVICES RAMP / PISTE</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #B01212 !important;">
+        <div class="form-row mt-4">
+            <label for="GPU" class="col-form-label col-md-3 text-right">GPU</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="GPU" name="GPU" placeholder="UM" required>
+                <small class="text-muted font-italic">MINUTES</small>
+            </div>
+            <label for="ASU" class="col-form-label col-md-3 text-right">ASU</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ASU" name="ASU" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="ACU" class="col-form-label col-md-3 text-right">ACU</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ACU" name="ACU" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="VIDE_TOILET" class="col-form-label col-md-3 text-right">VIDE TOILETTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="VIDE_TOILET" name="VIDE_TOILET" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="PLEIN_WATER" class="col-form-label col-md-3 text-right">PLEIN D'EAU</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="PLEIN_WATER" name="PLEIN_WATER" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="NET_CABINE" class="col-form-label col-md-3 text-right">NETTOYAGE CABINE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="NET_CABINE" name="NET_CABINE" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="ARRANGEMENT_CAB" class="col-form-label col-md-3 text-right">ARRANGEMENT CABINE & CHANGEMENT TETIERES</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ARRANGEMENT_CAB" name="ARRANGEMENT_CAB" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="RECONC_BAG_BRS" class="col-form-label col-md-3 text-right">RECONCILIATION BAGAGE BRS</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="RECONC_BAG_BRS" name="RECONC_BAG_BRS" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="ID_BAG" class="col-form-label col-md-3 text-right">IDENTIFICATION BAGAGE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ID_BAG" name="ID_BAG" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="PASSERELLE_PSG" class="col-form-label col-md-3 text-right">PASSERELLE PASSAGER</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="PASSERELLE_PSG" name="PASSERELLE_PSG" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="CAMION_ELEV" class="col-form-label col-md-3 text-right">CAMION ELEVATEUR</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="CAMION_ELEV" name="CAMION_ELEV" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="VIP_BUS" class="col-form-label col-md-3 text-right">VIP BUS</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="VIP_BUS" name="VIP_BUS" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR ROTATION</small>
+            </div>
+            <label for="VEHICULE_TRANSP_PISTE" class="col-form-label col-md-3 text-right">VEHICULE-TRANSPORT PISTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="VEHICULE_TRANSP_PISTE" name="VEHICULE_TRANSP_PISTE" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR ROTATION</small>
+            </div>
+            <label for="PUSH_BACK" class="col-form-label col-md-3 text-right">PUSH BACK</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="PUSH_BACK" name="PUSH_BACK" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="TOWING" class="col-form-label col-md-3 text-right">TOWING</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="TOWING" name="TOWING" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+            <label for="CHARIOT_BAG" class="col-form-label col-md-3 text-right">CHARIOT BAGAGES</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="CHARIOT_BAG" name="CHARIOT_BAG" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="TRACT_CHARIOT" class="col-form-label col-md-3 text-right">TRACTEUR DE CHARIOTS</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="TRACT_CHARIOT" name="TRACT_CHARIOT" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="TAPIS_BAG" class="col-form-label col-md-3 text-right">TAPIS A BAGAGES</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="TAPIS_BAG" name="TAPIS_BAG" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="PLATEFORME" class="col-form-label col-md-3 text-right">PLATEFORME</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="PLATEFORME" name="PLATEFORME" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="PORTE_CONTAINER_PALETTE" class="col-form-label col-md-3 text-right">PORTE CONTAINER-PALETTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="PORTE_CONTAINER_PALETTE" name="PORTE_CONTAINER_PALETTE" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="CONTAINER_PALETTE" class="col-form-label col-md-3 text-right">CONTAINER-PALETTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="CONTAINER_PALETTE" name="CONTAINER_PALETTE" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="ELEV_FOURCHE" class="col-form-label col-md-3 text-right">ELEVATEUR A FOURCHE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="ELEV_FOURCHE" name="ELEV_FOURCHE" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="AGENT_SERV_PISTE" class="col-form-label col-md-3 text-right">AGENT DE SERVITUDE PISTE</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="AGENT_SERV_PISTE" name="AGENT_SERV_PISTE" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR HEURE</small>
+            </div>
+            <label for="DB_MANIP_ULD" class="col-form-label col-md-3 text-right">DOUBLE MANIPUALATION DES ULD</label>
+            <div class="form-group col-md-1">
+                <input type="number" min="0" value="0" class="form-control" id="DB_MANIP_ULD" name="DB_MANIP_ULD" placeholder="UM" required>
+                <small class="text-muted font-italic">PAR OPERATION</small>
+            </div>
+        </div>
+    </div>
+    <button type="submit" id="submit-form" class="btn" style="color: white !important; background-color: #0e385b !important;"><b>CONFIRMER</b></button>
+  </form>
+
+    <script>
+        var typingTimer_dep;
+        var typingTimer_arr;
+        var typingTimer_fiche;
+
+        $('#fiche_cnl_mode').on('change', function(){
+            if($(this).val() == 'PLUSIEURS'){
+                $('#n_fiche_touchee_2').prop('readonly', false);
+            }
+            else{
+                $('#n_fiche_touchee_2').prop('readonly', true);
+                $('#n_fiche_touchee_2').prop('value', '');
+            }
+        });
+
+        $('#n_fiche_touchee_1').on('keyup', function(){
+            if($(this).val() != ''){
+                $('#cnl_cause_fiche').prop('disabled', false);
+                $('#cnl_cause_fiche').val($("#cnl_cause_fiche option:first").val())
+            }
+            else{
+                $('#cnl_cause_fiche').prop('disabled', true);
+                $('#cnl_cause_fiche').val(null)
+            }
+        });
+
+        $('.arr').on('keyup', function (event) {
+            clearTimeout(typingTimer_arr);
+            typingTimer_arr = setTimeout(function(){doneTypingArr(event)}, 500);
+        });
+
+        $('.arr').on('keydown', function () {
+            clearTimeout(typingTimer_arr);
+        });
+
+        $('.dep').on('keyup', function (event) {
+            clearTimeout(typingTimer_dep);
+            typingTimer_dep = setTimeout(function(){doneTypingDep(event)}, 500);
+        });
+
+        $('.dep').on('keydown', function () {
+            clearTimeout(typingTimer_dep);
+        });
+
+        $('.sel-psg').change(function(){
+            data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+            'psg_autre_serv_1' : $('#psg_autre_serv_1').val(),
+            'psg_autre_serv_2' : $('#psg_autre_serv_2').val(),
+            'srv' : 'psg'};
+            $.ajax({
+                type:'POST',
+                url:"{% url 'core:valid-services' %}",
+                datatype: 'JSON',
+                data: data,
+                success: function(data){
+                    if($('#alert_psg').children().length > 0){
+                        $('#message_psg').slideToggle("slow");
+                        $('#alert_psg').find('.msg').remove();
+                        document.getElementById('submit-form').disabled = false;
+                    }
+                    if( data.same){
+                        $('#alert_psg').append('<p class="msg post"><b>Veuillez choisir des services passagers distincts !</b></p>');
+                        $('#message_psg').slideToggle("slow");
+                        document.getElementById('submit-form').disabled = true;
+                    }
+                }
+            });
+        });
+
+        $('.sel-ramp').change(function(){
+            data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+            'pist_autre_serv_1' : $('#pist_autre_serv_1').val(),
+            'pist_autre_serv_2' : $('#pist_autre_serv_2').val(),
+            'pist_autre_serv_3' : $('#pist_autre_serv_3').val(),
+            'srv' : 'ramp'};
+            $.ajax({
+                type:'POST',
+                url:"{% url 'core:valid-services' %}",
+                datatype: 'JSON',
+                data: data,
+                success: function(data){
+                    if($('#alert_ramp').children().length > 0){
+                        $('#message_ramp').slideToggle("slow");
+                        $('#alert_ramp').find('.msg').remove();
+                        document.getElementById('submit-form').disabled = false;
+                    }
+                    if( data.same){
+                        $('#alert_ramp').append('<p class="msg post"><b>Veuillez choisir des services ramp / piste distincts !</b></p>');
+                        $('#message_ramp').slideToggle("slow");
+                        document.getElementById('submit-form').disabled = true;
+                    }
+                }
+            });
+        });
+
+        function ajax_job(elt, alert, msg){
+            var change;
+            if(elt == '#ata' || elt == '#atd'){
+                change = 'time';
+            }
+            else{
+                change = 'date';
+            }
+            data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+            'act_dte_arr' : $('#date_arrivee').val(), 'sta': $('#sta').val(),
+            'act_dte_dep' : $('#date_depart').val(), 'std' : $('#std').val(),
+            'ata': $('#ata').val(), 'atd': $('#atd').val(),
+            'actual' : $(elt).val(), 'change' : change};
+            $.ajax({
+                type:'POST',
+                url:"{% url 'core:valid-date' %}",
+                datatype: 'JSON',
+                data: data,
+                success: function(data){
+                    if($(alert).children().length > 0){
+                        // $(msg).slideToggle("slow");
+                        $(alert).find('.msg').remove();
+                    }
+                    if($('#alert_arr').children().length > 0 && $('#alert_arr').children().hasClass('post')){
+                        $('#message_arr').slideToggle("slow");
+                        $('#alert_arr').find('.msg').remove();
+                    }
+                    if(data.etat_dt || data.etat_date){
+                        $('#alert_arr').append('<p class="msg post"><b>la date de départ doit être postérieure à la date d\'arrivée !</b></p>');
+                        $('#message_arr').slideToggle("slow");
+                        document.getElementById('submit-form').disabled = true;
+                    }
+                    else if(data.etat){
+                        console.log('true')
+                        $(alert).append('<p class="msg"><b>La date saisie n\'est pas valide !</b></p>');
+                        $(msg).slideToggle("slow");
+                        document.getElementById('submit-form').disabled = true;
+                    }
+                    else{
+                        console.log('false')
+                        if(elt == '#date_arrivee'){
+                            other = '#alert_dep'
+                        }
+                        else{
+                            other = '#alert_arr'
+                        }
+                        if( $(other).children().length < 1 ){
+                            document.getElementById('submit-form').disabled = false;
+                        }
+                    }
+                }
+            });
+        }
+
+        function doneTypingArr (e) {
+            if($(e.target).is('#ata')){
+                ajax_job('#ata', '#alert_arr', '#message_arr');
+            }
+            else{
+                ajax_job('#date_arrivee', '#alert_arr', '#message_arr');
+            }
+        }
+
+        function doneTypingDep (e) {
+            if($(e.target).is('#atd')){
+                ajax_job('#atd', '#alert_dep', '#message_dep');
+            }
+            else{
+                ajax_job('#date_depart', '#alert_dep', '#message_dep');
+            }
+        }
+
+        $('.fiche').on('keyup', function (event) {
+            clearTimeout(typingTimer_fiche);
+            typingTimer_fiche = setTimeout(function(){doneTypingFiche(event)}, 250);
+        });
+
+        $('.fiche').on('keydown', function () {
+            clearTimeout(typingTimer_fiche);
+        });
+
+        function doneTypingFiche (e) {
+            ajax_fiche(e);
+        }
+
+        function ajax_fiche(e){
+            // console.log(e.target.getAttribute('id'));
+            var id = '#'.concat(e.target.getAttribute('id'));
+            // console.log(id);
+            // if(id == '#n_fiche_touchee'){
+            //     hidden = '#fiche_hidden'
+            // }
+            // else if (id == '#n_fiche_touchee_1') {
+            //     hidden = '#fiche_hidden_1'
+            // } else if(id == '#n_fiche_touchee_2'){
+            //     hidden = '#fiche_hidden_2'
+            // }
+            // else{
+            //     hidden = '#fiche_hidden_3'
+            // }
+            data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+            'n_fiche_touchee': $('#n_fiche_touchee').val(),
+            'n_fiche_touchee_1': $('#n_fiche_touchee_1').val(),
+            'n_fiche_touchee_2': $('#n_fiche_touchee_2').val(),
+            'n_fiche_touchee_3': $('#n_fiche_touchee_3').val(),};
+            $.ajax({
+                type:'POST',
+                url:'{% url "core:valid-fiche" %}',
+                datatype: 'JSON',
+                data: data,
+                success: function(data){
+                    if(data.exist){
+                        if($('#alert_fiche').children().length > 0){
+                            // $('#message_fiche').slideToggle("slow");
+                            $('#alert_fiche').find('.msg').remove();
+                            $('#alert_fiche').append('<p class="msg"><b>' + data.msg + '</b></p>');
+                        }
+                        if($('#alert_fiche').children().length < 1){
+                            $('#message_fiche').addClass(data.status);
+                            $('#alert_fiche').append('<p class="msg"><b>' + data.msg + '</b></p>');
+                            $("#message_fiche").slideToggle("slow");
+                            document.getElementById('submit-form').disabled = true;
+                        }
+                    }
+                    else{
+                        if($('#alert_fiche').children().length > 0){
+                            $("#message_fiche").slideToggle("slow");
+                            $('#alert_fiche').find('.msg').remove()
+                            $('#message_fiche').removeClass($('#message_fiche').attr('class').split(' ').pop());
+                            document.getElementById('submit-form').disabled = false;
+                        }
+                    }
+                }  
+            });
+        }
+
+        $('#compagnie_dispatcher').keyup(function(event){
+            data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+            'company' : $('#compagnie_dispatcher').val()};
+            $.ajax({
+                type:'POST',
+                url:'{% url "core:valid-company" %}',
+                datatype: 'JSON',
+                data: data,
+                success: function(data){
+                    if(data.exs){
+                        console.log('JS : True')
+                        if($('#alert').children().length < 1){
+                            // $('#message').show()
+                            $('#message').addClass(data.status);
+                            $('#alert').append('<p class="msg">Solde actuel : <b>' + data.solde + ' ' + data.monnaie + '<b/> </p>');
+                            $("#message").slideToggle("slow");
+                        }
+                    }
+                    else{
+                        console.log('JS : FALSE')
+                        if($('#alert').children().length > 0){
+                            $("#message").slideToggle("slow");
+                            $('#alert').find('.msg').remove()
+                            $('#message').removeClass($('#message').attr('class').split(' ').pop())
+                            // $('#message').hide()
+                        }
+                    }
+                }
+            });
+        });
+        
+    
+    </script>
+
+
+{% endblock content %}

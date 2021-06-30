@@ -1,0 +1,83 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+
+{% block head_title %}
+Liste des compagnies
+{% endblock head_title %}
+
+{% block content %}
+
+<a href=" {% url 'core:gestion-fiches' %} " class="btn fixed-top btn-lg my-0 p float-right mb-4" style="color: white !important; background-color: #0e385b !important;">
+    <b>GÉRER LES AFFECTATIONS DES FICHES</b>
+</a>
+<div class="table-responsive">
+    <table id="fiches" class="table table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col"><b>#</b></th>
+            <th scope="col"><b>N° FICHE</b></th>
+            <th scope="col"><b>ESCALE</b></th>
+            <th scope="col"><b>STATUS</b></th>
+            <th scope="col"><b>CAUSE D'ANNULATION</b></th>
+            <th scope="col"><b>ID DU VOL</b></th>
+            <th scope="col"><b>SEE MORE</b></th>
+          </tr>
+        </thead>
+        <tbody>
+            {% for fiche in object_list %}
+            <tr class="row_tab">
+                <th scope="row"><b>{{ forloop.counter }}</b></th>
+                <td><b>{{fiche.n_fiche}}</b></td>
+                <td><b>{{fiche.escale.escale}} - {{fiche.escale.full_name}} </b></td>
+                {% if fiche.status == 'CONSOMMÉ' %}
+                <td><b class="h4"><span class="badge badge-success">{{fiche.status}}</span></b></td>
+                {% elif fiche.status == 'NEW' %}
+                <td><b class="h4"><span class="badge badge-primary">{{fiche.status}}</span></b></td>
+                {% else %}
+                <td><b class="h4"><span class="badge badge-danger">{{fiche.status}}</span></b></td>
+                {% endif %}
+                <td><b>
+                    {% if fiche.status == 'ANNULE' %}
+                    {{fiche.cnl_cause_fiche}}
+                    {% else %}
+                    -
+                    {% endif %}
+                </b></td>
+                <td><b>
+                    {% if fiche.key_flt is not None %}
+                    {{fiche.key_flt.key_flt}}
+                    {% else %}
+                    -
+                    {% endif %}
+                </b></td>
+                <td><b>
+                    {% if fiche.key_flt is not None %}
+                    <a href="{{fiche.key_flt.get_absolute_url}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+                            <path d="M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z"/>
+                          </svg>
+                    </a>
+                    {% else %}
+                    -
+                    {% endif %}
+                </b></td>
+            </tr>
+            {% endfor %}     
+        </tbody>
+    </table>
+   
+</div>
+
+<script>
+    $(document).ready( function () {
+        $('#fiches').DataTable({
+            "ordering": false,
+            "pagingType": "full_numbers"
+        });
+        $('.dataTables_paginate').addClass('pagination pagination-lg d-flex justify-content-center mt-5');
+    } );
+</script>
+
+
+{% endblock content %}

@@ -1,0 +1,159 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+
+{% block head_title %}
+Facturation des vols réguliers
+{% endblock head_title %}
+
+{% block content %}
+
+<div id="message_err" class="mt-2 pb-0 pt-0" style="display: none;">
+    <div id="alert_err" class="alert alert-danger alert-dismissible fade show" role="alert">
+    </div>
+</div>
+
+{% if 'COMPAGNIE' not in title %}
+<form method="POST" action="{% url 'core:valid-fact-regular' %}" class="form">
+    {% csrf_token %}
+    <div class="shadow p-3 mb-4 bg-white rounded w-100y">
+        <h3 class="mb-4" style="font-weight: bolder !important;"><b>FACTURATION</b></h3>
+        <a href="{% url 'core:hist-regular-fact' %}" class="mt-5 h5" target="_blank" style="color: grey !important;"><u>Consulter l'historique des facturations</u></a>
+        <div id="msg_last_fact" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_last_fact" class="fade show" role="alert">
+            </div>
+        </div>
+        <!-- <a href="{% url 'core:hist-cnl' %}" class="mt-5 h5" target="_blank" style="color: grey !important;"><u>Consulter l'historique des annulations</u></a> -->
+        <div class="mt-4 form-row">
+            <div class="form-group col-md-3">
+                <label for="compagnie_dispatcher" class="col-form-label">Escale</label>
+                <select class="custom-select chg" name="escale" id="escale" required>
+                    {% for esc in escales %}
+                    {% if esc|get_type == "<class 'tuple'>" %}
+                        <option value="{{esc}}">{{esc.1}}</option>
+                    {% else %}
+                    <option value="{{esc.escale}}">{{esc.escale}} - {{esc.full_name}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="compagnie_dispatcher" class="col-form-label">Compagnie</label>
+                <select class="custom-select chg" name="compagnie_dispatcher" id="compagnie_dispatcher" disabled required>
+                    {% for p in companies %}
+                    {% if p|get_type == "<class 'tuple'>" %}
+                        <option value="{{p}}">{{p.1}}</option>
+                    {% else %}
+                    <option value="{{p}}">{{p}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="from_date" class="col-form-label">À partir du</label>
+                <input type="date" max="2999-12-31" class="form-control chg" name="from_date" id="from_date" readonly>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="until_date" class="col-form-label">Jusqu'au</label>
+                <input type="date" max="2999-12-31" class="form-control chg" name="until_date" id="until_date" readonly>
+            </div>
+            <div id="type_fact" class="form-group col-md-2" style="display: none !important;">
+                <label for="type" class="col-form-label">Type de facturation</label>
+                <select class="custom-select chg" name="type" id="type">
+                    <option value="corr">CORRECTION</option>
+                    <option value="corr">COMPLÉMENT</option>
+                </select>
+            </div>
+            <!-- <div class="d-flex align-items-center">
+                
+            </div> -->
+        </div>
+    </div>
+    <button type="submit" id="submit-form" class="btn mt-2" style="color: white !important; background-color: #0e385b !important;" disabled><b class="h6">GÉNÉRER LA FACTURE</b></button>
+</form>
+{% endif %}
+
+<script>
+    $('#escale').on('change', function(){
+        if($('#escale').val() != "('', '---------')"){
+            $('#compagnie_dispatcher').prop('disabled', false)
+        }
+        else{
+            $('#compagnie_dispatcher').prop('disabled', true)
+        }
+    });
+
+    $('.chg').on('change', function(){
+        var comp;
+        if($('#compagnie_dispatcher').val() != "('', '---------')"){
+            $('#from_date').prop('readonly', false);
+            $('#until_date').prop('readonly', false);
+            // $('#submit-form').prop('disabled', false);
+            comp = $('#compagnie_dispatcher').val();
+        }
+        else{
+            $('#from_date').prop('readonly', true);
+            $('#from_date').val('');
+            $('#until_date').prop('readonly', true);
+            $('#until_date').val('');
+            // $('#submit-form').prop('disabled', true);
+            comp = '';
+        }
+        data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+        'compagnie_dispatcher' : comp,
+        'from_date' : $('#from_date').val(),
+        'until_date' : $('#until_date').val(),
+        'escale': $('#escale').val()};
+        $.ajax({
+            type:'POST',
+            url:'{% url "core:valid-company-fact" %}',
+            datatype: 'JSON',
+            data: data,
+            success: function(data){
+                if(data.exist){
+                    if(data.msg.startsWith('Une partie')){
+                        $('#type_fact').show();
+                    }
+                    else{
+                        $('#type_fact').hide();
+                    }
+                    $('#submit-form').prop('disabled', true);
+                    if($('#alert_last_fact').children().length > 0){
+                        $('#alert_last_fact').find('.msg').remove();
+                        $('#msg_last_fact').slideToggle("slow");
+                    }
+                    if($('#alert_err').children().length > 0){
+                        $('#alert_err').find('.msg').remove();
+                        $('#alert_err').append('<p class="msg"><b>' + data.msg + '</b></p>');
+                    }
+                    else{
+                        $('#alert_err').append('<p class="msg"><b>' + data.msg + '</b></p>');
+                        $('#message_err').slideToggle("slow");
+                    }
+                }
+                else{
+                    if($('#alert_err').children().length > 0){
+                        $('#alert_err').find('.msg').remove();
+                        $('#message_err').slideToggle("slow");
+                        if($('#from_date').val() != '' && $('#until_date').val() != ''){
+                            $('#submit-form').prop('disabled', false);
+                        }
+                    }
+                    if(data.msg != 'XXX' ){
+                        if($('#alert_last_fact').children().length > 0){
+                            $('#alert_last_fact').find('.msg').remove();
+                            $('#alert_last_fact').append('<p class="msg h6 text-muted text-success"><b>La dernière facturation effectuée pour ' + data.comp + ' pour l\'escale ' + data.esc + ' : ' + data.date_from + ' au ' + data.date_until + '</b></p>');
+                        }
+                        else{
+                            $('#alert_last_fact').append('<p class="msg h6 text-muted text-success"><b>La dernière facturation effectuée pour ' + data.comp + ' pour l\'escale ' + data.esc + ' : ' + data.date_from + ' au ' + data.date_until + '</b></p>');
+                            $('#msg_last_fact').slideToggle("slow");
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+
+{% endblock content %}

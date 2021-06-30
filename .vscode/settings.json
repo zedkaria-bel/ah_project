@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "C:\\Program Files\\Python3.9\\python.exe",
+    "python.linting.pylintArgs": ["--init-hook",
+        "import sys; sys.path.append('C:\\Users\\zaki1\\Desktop\\AH_PROJECT\\project\\core')"],
+}

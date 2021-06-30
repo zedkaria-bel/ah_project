@@ -1,0 +1,464 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+
+{% block head_title %}
+Détail de la facturation
+{% endblock head_title %}
+
+{% block content %}
+
+<div id="message_err" class="mt-2 pb-0 pt-0" style="display: none;">
+    <div id="alert_err" class="alert alert-danger alert-dismissible fade show" role="alert">
+    </div>
+</div>
+
+{% if qs_count %}
+<!-- <a href="#" target="_blank" download>
+    <button id="exportBtn1">Export To Excel</button><br><br>
+    <p class="ml-3 h4">Télécharger la facture</p>
+</a> -->
+<!-- <div id="printer" class="ml-auto mr-3 mt-4 mb-4 d-flex flex-row justify-content-end" style="cursor: pointer; width: min-content !important;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#7d7d7d" class="bi bi-printer-fill" viewBox="0 0 16 16">
+        <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
+        <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+    </svg>
+    <p class="ml-3 h4" style="color: #7d7d7d !important;">Imprimer</p>
+</div> -->
+<p class="h6 mb-4">Résultats : {{qs_count}} vol(s) </p>
+{% endif %}
+
+{% if qs_count %}
+    <div id="to_print">
+        
+        <div class="d-flex justify-content-between">
+            <p class="h3 mb-4">ESCALE : <b id="esc">{{esc}}</b> <span id="corr">{% if type_fact is not None %} - ( {{type_fact}} ) {% endif %}</span> </p>
+            <div class="flex-column">
+                <p class="h3">COMPAGNIE : <b id="comp">{{company}} </b> </p>
+                <p class="h3">PÉRIODE : <b>du <span id="from_date">{{from_date|date:"d-m-Y"}}</span> au <span id="until_date">{{until_date|date:"d-m-Y"}}</span> </b> </p>
+                <p class="h3">MONNAIE : <b>{{monnaie}}</b> </p>
+            </div>
+        </div>
+        
+    </div>
+
+    <div id="print-table">
+        <div class="table-responsive">
+            <table id="table1" class="table table-sm table-bordered" style="width:100%">
+                <thead class="thead-light h6">
+                    <tr style="font-size: small !important;" style="background-color: gray !important;">
+                        <th scope="col"><b>N° FICHE</b></th>
+                        <th scope="col"><b>N° VOL ARR</b></th>
+                        <th scope="col"><b>N° VOL DEP</b></th>
+                        <th scope="col"><b>ACT DTE ARR</b></th>
+                        <th scope="col"><b>ACT DTE DEP</b></th>
+                        <th scope="col"><b>TYPE AVION</b></th>
+                        <th scope="col"><b>MATRICULE</b></th>
+                        <th scope="col"><b>MTOW</b></th>
+                        <th scope="col"><b>TOUCHÉE</b></th>
+                        <th scope="col"><b>STA</b></th>
+                        <th scope="col"><b>ATA</b></th>
+                        <th scope="col"><b>STD</b></th>
+                        <th scope="col"><b>ATD</b></th>
+                        <th scope="col"><b>PAX ARR</b></th>
+                        <th scope="col"><b>PAX DEP</b></th>
+                        <th scope="col"><b>CARGO ARR</b></th>
+                        <th scope="col"><b>CARGO DEP</b></th>
+                        <th class="yellow" scope="col"><b>TARIF DE BASE</b></th>
+                        <th class="yellow" scope="col"><b>MAJORATIONS</b></th>
+                        <th class="yellow"scope="col"><b>REDUCTIONS</b></th>
+                        <th scope="col"><b>ASSIST WCH</b></th>
+                        <th scope="col"><b>ASSIST UM</b></th>
+                        <th scope="col"><b>ASSIST TRANSIT</b></th>
+                        <th scope="col"><b>ACC SALON</b></th>
+                        <th scope="col"><b>ASSIST VIP</b></th>
+                        <th scope="col"><b>USE DCS</b></th>
+                        <th scope="col"><b>DEPORTEE</b></th>
+                        <th scope="col"><b>AGENT SERV PASSAGE</b></th>
+                        <th scope="col"><b>CIVIERE</b></th>
+                        <th scope="col"><b>HUM</b></th>
+                        <th scope="col"><b>OUV DOSS BAG</b></th>
+                        <th scope="col"><b>DOSS VOL IMP</b></th>
+                        <th scope="col"><b>AGENT COORD</b></th>
+                        <th scope="col"><b>COM SOL COCKPIT</b></th>
+                        <th scope="col"><b>AG OP QUALIF</b></th>
+                        <th scope="col"><b>GPU</b></th>
+                        <th scope="col"><b>ASU</b></th>
+                        <th scope="col"><b>ACU</b></th>
+                        <th scope="col"><b>VIDE TOILETTE</b></th>
+                        <th scope="col"><b>PLEIN EAU</b></th>
+                        <th scope="col"><b>NET CABINE</b></th>
+                        <th scope="col"><b>ARR CABINE</b></th>
+                        <th scope="col"><b>RECONC BAG</b></th>
+                        <th scope="col"><b>ID BAG</b></th>
+                        <th scope="col"><b>PASSERELLE PSG</b></th>
+                        <th scope="col"><b>CAMION ELEV</b></th>
+                        <th scope="col"><b>VIP BUS</b></th>
+                        <th scope="col"><b>VEHICULE TRANSP PISTE</b></th>
+                        <th scope="col"><b>PUSH BACK</b></th>
+                        <th scope="col"><b>TOWING</b></th>
+                        <th scope="col"><b>CHARIOT BAG</b></th>
+                        <th scope="col"><b>TRACT CHARIOT</b></th>
+                        <th scope="col"><b>TAPIS BAG</b></th>
+                        <th scope="col"><b>PLATEFORME</b></th>
+                        <th scope="col"><b>PORTE CONTAINER PALETTE</b></th>
+                        <th scope="col"><b>CONTAINER PALETTE</b></th>
+                        <th scope="col"><b>ELEV FOURCHE</b></th>
+                        <th scope="col"><b>AG SERV PISTE</b></th>
+                        <th scope="col"><b>DB MANIP ULD</b></th>
+                        <th class="yellow" scope="col"><b>EXTRA SERVICES</b></th>
+                        <th scope="col" class="green"><b>MONTANT</b></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody">
+                    {% for comp in object_list %}
+                    <tr class="row_tab" data-toggle="tooltip" title="FLIGHT KEY : {{comp.key_flt}}" data-placement="top">
+                        <td><b class="h6 font-weight-bold" >{{comp.n_fiche_touchee}}</b></td>
+                        <td><b class="h6">{{comp.n_vol_arr}}</b></td>
+                        <td><b class="h6">{{comp.n_vol_dep}}</b></td>
+                        <td style="width:65% !important;"><b class="h6">{{comp.act_dte_arr|date:"d-m-Y"}}</b></td>
+                        <td><b class="h6 " >{{comp.act_dte_dep|date:"d-m-Y"}}</b></td>
+                        <td ><b class="h6">{{comp.type_avion}}</b></td>
+                        <td><b class="h6">{{comp.reg}}</b></td>
+                        <td class="cpt"><b class="h6">{{comp.mtow_tonnes_field}}</b></td>
+                        <td><b class="h6">{{comp.nature_touchee}}</b></td>
+                        <td><b class="h6 " >{{comp.sta|time:"H:i"}}</b></td>
+                        <td><b class="h6 " >{{comp.ata|time:"H:i"}}</b></td>
+                        <td><b class="h6 " >{{comp.std|time:"H:i"}}</b></td>
+                        <td><b class="h6 " >{{comp.atd|time:"H:i"}}</b></td>
+                        <td class="pax_arriv"><b class="h6 " >{{comp.pax_arriv}}</b></td>
+                        <td class="pax_dep"><b class="h6 " >{{comp.pax_dep}}</b></td>
+                        <td class="cargo_arriv"><b class="h6 " >{{comp.cargo_arriv}}</b></td>
+                        <td class="cargo_dep"><b class="h6 " >{{comp.cargo_dep}}</b></td>
+                        <td class="yellow"><b class="h6 " >{{comp.tarif_de_base}}</b></td>
+                        <td class="yellow"><b class="h6 " >{{comp.majoration}}</b></td>
+                        <td class="yellow"><b class="h6 " >{{comp.reduction}}</b></td>
+                        <td class="cpt ASSIST_WCH"><b class="h6">{{comp.ASSIST_WCH}}</b></td>
+                        <td class="cpt ASSIST_UM"><b class="h6">{{comp.ASSIST_UM}}</b></td>
+                        <td class="cpt ASSIST_TRANSIT"><b class="h6">{{comp.ASSIST_TRANSIT}}</b></td>
+                        <td class="cpt ACC_SALON"><b class="h6">{{comp.ACC_SALON}}</b></td>
+                        <td class="cpt ASSIST_VIP"><b class="h6">{{comp.ASSIST_VIP}}</b></td>
+                        <td class="cpt USE_DCS"><b class="h6">{{comp.USE_DCS}}</b></td>
+                        <td class="cpt DEPORTEE"><b class="h6">{{comp.DEPORTEE}}</b></td>
+                        <td class="cp AGENT_SERV_PASSAGEt"><b class="h6">{{comp.AGENT_SERV_PASSAGE}}</b></td>
+                        <td class="cpt CIVIERE"><b class="h6">{{comp.CIVIERE}}</b></td>
+                        <td class="cpt HUM"><b class="h6">{{comp.HUM}}</b></td>
+                        <td class="cpt OUV_DOSS_BAG"><b class="h6">{{comp.OUV_DOSS_BAG}}</b></td>
+                        <td class="cpt DOSS_VOL_IMP"><b class="h6">{{comp.DOSS_VOL_IMP}}</b></td>
+                        <td class="cpt AGENT_COORD"><b class="h6">{{comp.AGENT_COORD}}</b></td>
+                        <td class="cpt COMM_SOL_COCKPIT"><b class="h6">{{comp.COMM_SOL_COCKPIT}}</b></td>
+                        <td class="cpt AGENT_OP_QUALIF"><b class="h6">{{comp.AGENT_OP_QUALIF}}</b></td>
+                        <td class="cpt GPU"><b class="h6">{{comp.GPU}}</b></td>
+                        <td class="cpt ASU"><b class="h6">{{comp.ASU}}</b></td>
+                        <td class="cpt ACU"><b class="h6">{{comp.ACU}}</b></td>
+                        <td class="cpt VIDE_TOILET"><b class="h6">{{comp.VIDE_TOILET}}</b></td>
+                        <td class="cpt PLEIN_WATER"><b class="h6">{{comp.PLEIN_WATER}}</b></td>
+                        <td class="cpt NET_CABINE"><b class="h6">{{comp.NET_CABINE}}</b></td>
+                        <td class="cpt ARRANGEMENT_CAB"><b class="h6">{{comp.ARRANGEMENT_CAB}}</b></td>
+                        <td class="cpt RECONC_BAG_BRS"><b class="h6">{{comp.RECONC_BAG_BRS}}</b></td>
+                        <td class="cpt ID_BAG"><b class="h6">{{comp.ID_BAG}}</b></td>
+                        <td class="cpt PASSERELLE_PSG"><b class="h6">{{comp.PASSERELLE_PSG}}</b></td>
+                        <td class="cpt CAMION_ELEV"><b class="h6">{{comp.CAMION_ELEV}}</b></td>
+                        <td class="cpt VIP_BUS"><b class="h6">{{comp.VIP_BUS}}</b></td>
+                        <td class="cpt VEHICULE_TRANSP_PISTE"><b class="h6">{{comp.VEHICULE_TRANSP_PISTE}}</b></td>
+                        <td class="cpt PUSH_BACK"><b class="h6">{{comp.PUSH_BACK}}</b></td>
+                        <td class="cpt TOWING"><b class="h6">{{comp.TOWING}}</b></td>
+                        <td class="cpt CHARIOT_BAG"><b class="h6">{{comp.CHARIOT_BAG}}</b></td>
+                        <td class="cpt TRACT_CHARIOT"><b class="h6">{{comp.TRACT_CHARIOT}}</b></td>
+                        <td class="cpt TAPIS_BAG"><b class="h6">{{comp.TAPIS_BAG}}</b></td>
+                        <td class="cpt PLATEFORME"><b class="h6">{{comp.PLATEFORME}}</b></td>
+                        <td class="cpt PORTE_CONTAINER_PALETTE"><b class="h6">{{comp.PORTE_CONTAINER_PALETTE}}</b></td>
+                        <td class="cpt CONTAINER_PALETTE"><b class="h6">{{comp.CONTAINER_PALETTE}}</b></td>
+                        <td class="cpt ELEV_FOURCHE"><b class="h6">{{comp.ELEV_FOURCHE}}</b></td>
+                        <td class="cpt AGENT_SERV_PISTE"><b class="h6">{{comp.AGENT_SERV_PISTE}}</b></td>
+                        <td class="cpt DB_MANIP_ULD"><b class="h6">{{comp.DB_MANIP_ULD}}</b></td>
+                        <td class="yellow"><b class="h6 " >{{comp.extra_service}}</b></td>
+                        <td class="montant_globale green"><b class="h6 " >
+                            {% if monnaie == 'EUR' %}
+                            {{comp.eur}}
+                            {% elif monnaie == 'USD' %}
+                            {{comp.montant_globale}}
+                            {% else %}
+                            {{comp.dzd}}
+                            {% endif %}
+                        </b></td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="total_row" style="background-color: #eaeaea !important;">
+                        <td class="total"><b class="h4">TOTAL</b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b id="pax_arriv" class="h6 font-weight-bold" ></b></td>
+                        <td><b id="pax_dep" class="h6 font-weight-bold" ></b></td>
+                        <td><b id="cargo_arriv" class="h6 font-weight-bold" ></b></td>
+                        <td><b id="cargo_dep" class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <td><b id="ASSIST_WCH" class="h6"></b></td>
+                        <td><b id="ASSIST_UM" class="h6"></b></td>
+                        <td><b id="ASSIST_TRANSIT" class="h6"></b></td>
+                        <td><b id="ACC_SALON" class="h6"></b></td>
+                        <td><b id="ASSIST_VIP" class="h6"></b></td>
+                        <td><b id="USE_DCS" class="h6"></b></td>
+                        <td><b id="DEPORTEE" class="h6"></b></td>
+                        <td><b id="AGENT_SERV_PASSAGE"></b></td>
+                        <td><b id="CIVIERE" class="h6"></b></td>
+                        <td><b id="HUM" class="h6"></b></td>
+                        <td><b id="OUV_DOSS_BAG" class="h6"></b></td>
+                        <td><b id="DOSS_VOL_IMP" class="h6"></b></td>
+                        <td><b id="AGENT_COORD" class="h6"></b></td>
+                        <td><b id="COMM_SOL_COCKPIT" class="h6"></b></td>
+                        <td><b id="AGENT_OP_QUALIF" class="h6"></b></td>
+                        <td><b id="GPU" class="h6"></b></td>
+                        <td><b id="ASU" class="h6"></b></td>
+                        <td><b id="ACU" class="h6"></b></td>
+                        <td><b id="VIDE_TOILET" class="h6"></b></td>
+                        <td><b id="PLEIN_WATER" class="h6"></b></td>
+                        <td><b id="NET_CABINE" class="h6"></b></td>
+                        <td><b id="ARRANGEMENT_CAB" class="h6"></b></td>
+                        <td><b id="RECONC_BAG_BRS" class="h6"></b></td>
+                        <td><b id="ID_BAG" class="h6"></b></td>
+                        <td><b id="PASSERELLE_PSG" class="h6"></b></td>
+                        <td><b id="CAMION_ELEV" class="h6"></b></td>
+                        <td><b id="VIP_BUS" class="h6"></b></td>
+                        <td><b id="VEHICULE_TRANSP_PISTE" class="h6"></b></td>
+                        <td><b id="PUSH_BACK" class="h6"></b></td>
+                        <td><b id="TOWING" class="h6"></b></td>
+                        <td><b id="CHARIOT_BAG" class="h6"></b></td>
+                        <td><b id="TRACT_CHARIOT" class="h6"></b></td>
+                        <td><b id="TAPIS_BAG" class="h6"></b></td>
+                        <td><b id="PLATEFORME" class="h6"></b></td>
+                        <td><b id="PORTE_CONTAINER_PALETTE" class="h6"></b></td>
+                        <td><b id="CONTAINER_PALETTE" class="h6"></b></td>
+                        <td><b id="ELEV_FOURCHE" class="h6"></b></td>
+                        <td><b id="AGENT_SERV_PISTE" class="h6"></b></td>
+                        <td><b id="DB_MANIP_ULD" class="h6"></b></td>
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        <!-- {% for item in "x"|ljust:"43" %}
+                        <td><b class="h6 font-weight-bold" ></b></td>
+                        {% endfor %} -->
+                        <td class="sum"><b id="montant_globale" class="h3 font-weight-bold" ></b></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+
+    $(document).ready(function(){
+        $('[data-toggle="tooltip"]').tooltip(); 
+    });
+    var corr = '';
+    console.log($('#corr').text())
+    if($('#corr').text().indexOf('CORRECTION')){
+        var corr = '_CORRECTION_'
+    }
+
+    $(document).ready( function () {
+        var table = $('#table1').DataTable({
+            "searching": false,
+            "paging": false,
+            "info": false,
+            "ordering": false,
+            responsive: true,
+            scrollY: false,
+            scrollX: true,
+            fixedColumns:   {
+                leftColumns: 1,
+                rightColumns: 1
+            },
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'excelHtml5',
+                    title: $('#esc').text() + '_' + corr + '_' +  $('#comp').text() + '_' + $('#from_date').text().replace(/\-/g, '') + '_' + $('#until_date').text().replace(/\-/g, ''),
+                    orientation: 'landscape',
+                    pageSize: 'LEGAL',
+                    text: 'Télécharger',
+                    className: 'btn btn-primary btn-lg'
+                }
+            ],
+        });
+    } );
+
+        // $(document).ready(function () {
+        //     $("#exportBtn1").click(function(){
+        //         TableToExcel.convert(document.getElementById("table1"), {
+        //             name: "Traceability.xlsx",
+        //             sheet: {
+        //             name: "Sheet1"
+        //             }
+        //         });
+        //         });
+        // });
+        $('#printer').on('click', function(){
+            var today = new Date();
+            var dd = today.getDate();
+            var mm = today.getMonth() + 1;
+            var yyyy = today.getFullYear();
+            if (dd < 10) {
+                dd = '0' + dd;
+            }
+            if (mm < 10) {
+                mm = '0' + mm;
+            }
+            var date = dd + '/' + mm + '/' + yyyy;
+            var min = today.getMinutes();
+            if(min < 10){
+                min = '0' + min;
+            }
+            var time = today.getHours() + ":" + min;
+            // var new_elm = 
+            var tagid = "print-table";
+            var hashid = "#"+ tagid;
+            // var head_rot = document.getElementById(tagid).cloneNode(true);
+            // $(hashid).addClass('rotate');
+            var tagname =  $(hashid).prop("tagName").toLowerCase() ;
+            var attributes = ""; 
+            var attrs = $(hashid).attributes;
+              $.each(attrs,function(i,elem){
+                attributes +=  " "+  elem.name+" ='"+elem.value+"' " ;
+              })
+            var divToPrint = '<span class="h5" style="margin-bottom: 50px !important;">Le ' + date + ', ' + time + '</span></br>' + $(hashid).html() ;
+            var head = "<html><head>"+ $("head").html() + "</head>" ;
+            var allcontent = head + "<body onload='window.print(); ' >"+  divToPrint +  "</body></html>"  ;
+            var newWin=window.open('','Print-Window');
+            newWin.document.open();
+            newWin.document.write(allcontent);
+            newWin.document.close();
+        });
+
+    var sum = 0;
+    $('.pax_arriv').each(function(){
+        sum += parseFloat($(this).text());
+    });
+    $('#pax_arriv').text(sum);
+    sum = 0;
+    $('.cargo_arriv').each(function(){
+        sum += parseFloat($(this).text());
+    });
+    $('#cargo_arriv').text(sum);
+    sum = 0;
+    $('.pax_dep').each(function(){
+        sum += parseFloat($(this).text());
+    });
+    $('#pax_dep').text(sum);
+    sum = 0;
+    $('.cargo_dep').each(function(){
+        sum += parseFloat($(this).text());
+    });
+    $('#cargo_dep').text(sum);
+    sum = 0;
+    $('.montant_globale').each(function(){
+        sum += parseFloat($(this).text());
+    });
+    console.log(sum)
+    $('#montant_globale').text(sum.toFixed(2));
+    var cible;
+    $('.cpt').each(function(){
+        sum = 0;
+        var cname = $(this).attr('class').split(' ')[1];
+        serv = '.' + cname
+        $(serv).each(function(){
+            sum += parseFloat($(this).text());
+        });
+        cible = '#' + cname;
+        $(cible).text(sum);
+    });  
+
+    $('#escale').on('change', function(){
+        if($('#escale').val() != "('', '---------')"){
+            $('#compagnie_dispatcher').prop('disabled', false)
+        }
+        else{
+            $('#compagnie_dispatcher').prop('disabled', true)
+        }
+    });
+
+    $('.chg').on('change', function(){
+        var comp;
+        if($('#compagnie_dispatcher').val() != "('', '---------')"){
+            $('#from_date').prop('readonly', false);
+            $('#until_date').prop('readonly', false);
+            // $('#submit-form').prop('disabled', false);
+            comp = $('#compagnie_dispatcher').val();
+        }
+        else{
+            $('#from_date').prop('readonly', true);
+            $('#from_date').val('');
+            $('#until_date').prop('readonly', true);
+            $('#until_date').val('');
+            // $('#submit-form').prop('disabled', true);
+            comp = '';
+        }
+        data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+        'compagnie_dispatcher' : comp,
+        'from_date' : $('#from_date').val(),
+        'until_date' : $('#until_date').val(),
+        'escale': $('#escale').val()};
+        $.ajax({
+            type:'POST',
+            url:'{% url "core:valid-company-fact" %}',
+            datatype: 'JSON',
+            data: data,
+            success: function(data){
+                if(data.exist){
+                    if(data.msg.startsWith('Une partie')){
+                        $('#type_fact').show();
+                    }
+                    else{
+                        $('#type_fact').hide();
+                    }
+                    $('#submit-form').prop('disabled', true);
+                    if($('#alert_last_fact').children().length > 0){
+                        $('#alert_last_fact').find('.msg').remove();
+                        $('#msg_last_fact').slideToggle("slow");
+                    }
+                    if($('#alert_err').children().length > 0){
+                        $('#alert_err').find('.msg').remove();
+                        $('#alert_err').append('<p class="msg"><b>' + data.msg + '</b></p>');
+                    }
+                    else{
+                        $('#alert_err').append('<p class="msg"><b>' + data.msg + '</b></p>');
+                        $('#message_err').slideToggle("slow");
+                    }
+                }
+                else{
+                    if($('#alert_err').children().length > 0){
+                        $('#alert_err').find('.msg').remove();
+                        $('#message_err').slideToggle("slow");
+                        if($('#from_date').val() != '' && $('#until_date').val() != ''){
+                            $('#submit-form').prop('disabled', false);
+                        }
+                    }
+                    if(data.msg != 'XXX' ){
+                        if($('#alert_last_fact').children().length > 0){
+                            $('#alert_last_fact').find('.msg').remove();
+                            $('#alert_last_fact').append('<p class="msg h6 text-muted text-success"><b>La dernière facturation effectuée pour ' + data.comp + ' pour l\'escale ' + data.esc + ' : ' + data.date_from + ' au ' + data.date_until + '</b></p>');
+                        }
+                        else{
+                            $('#alert_last_fact').append('<p class="msg h6 text-muted text-success"><b>La dernière facturation effectuée pour ' + data.comp + ' pour l\'escale ' + data.esc + ' : ' + data.date_from + ' au ' + data.date_until + '</b></p>');
+                            $('#msg_last_fact').slideToggle("slow");
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+
+{% endblock content %}

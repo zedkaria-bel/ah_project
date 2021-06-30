@@ -1,0 +1,264 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+
+{% block head_title %}
+Liste des compagnies
+{% endblock head_title %}
+
+{% block content %}
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+    <b class="font-weight-bold h4">{{ message }}</b>
+    <button type="button" class="close align-items-center" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<form method="POST" action="{% url 'core:add-quota' %}" class="form">
+    {% csrf_token %}
+    <!-- AJOUTER QUOTA -->
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h3 class="mb-4" style="font-weight: bolder !important;"><b>AJOUTER UN QUOTA</b></h3>
+        <p class="h6 mb-3" style="color: grey;">La dernière fiche enregistrée est la fiche N° {{max_fiche}}</p>
+        <div id="message_fiche" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_fiche" class="alert alert-danger alert-dismissible fade show" role="alert">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">A PARTIR DE LA FICHE N°</label>
+                <input type="number" min="0" class="form-control fiche" value="{{next_fiche}}" name="n_fiche_touchee_1" id="n_fiche_touchee_1" placeholder="N°" disabled>
+            </div>
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">JUSQU'A LA FICHE N° (INCLUE)</label>
+                <input type="number" min="0" class="form-control fiche" name="n_fiche_touchee_2" id="n_fiche_touchee_2" placeholder="N°" required>
+            </div>
+            <a href="{% url 'core:hist-quota' %}" class="mt-5 ml-5 h5" target="_blank" style="color: grey !important;"><u>Consulter l'historique des ajouts</u></a>
+        </div>
+        <button type="submit" id="submit-form" class="btn" style="color: white !important; background-color: #0e385b !important;"><b>AJOUTER</b></button>
+    </div>
+</form>
+<form method="POST" action="{% url 'core:affect-quota' %}" class="form">
+    {% csrf_token %}
+    <!-- AFFECTER QUOTA -->
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h3 class="mb-4" style="font-weight: bolder !important;"><b>GESTION DES AFFECTATIONS</b></h3>
+        <p class="h6 mb-3" style="color: grey;">La prochaine affectation se fera à partir de la fiche N° {{last_affected}}</p>
+        <div id="message_affect" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_affect" class="alert alert-danger alert-dismissible fade show" role="alert">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">Escale</label>
+                <select class="custom-select" name="escale" id="escale" required>
+                    {% for esc in escales %}
+                    {% if esc|get_type == "<class 'tuple'>" %}
+                        <option value="{{esc}}">{{esc.1}}</option>
+                    {% else %}
+                    <option value="{{esc.escale}}">{{esc.escale}} - {{esc.full_name}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">A PARTIR DE LA FICHE N°</label>
+                <input type="number" min="0" class="form-control fiche" value="{{last_affected}}" name="n_fiche_1" id="n_fiche_1" placeholder="N°" disabled>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">JUSQU'A LA FICHE N° (INCLUE)</label>
+                <input type="number" min="0" class="form-control fiche" name="n_fiche_2" id="n_fiche_2" placeholder="N°" required disabled>
+            </div>
+            <a href="{% url 'core:hist-affect' %}" class="mt-5 ml-5 h5" target="_blank" style="color: grey !important;"><u>Consulter l'historique des affectations</u></a>
+        </div>
+        <button type="submit" id="submit-form-affect" class="btn" style="color: white !important; background-color: #0e385b !important;" disabled><b>AFFECTER</b></button>
+    </div>
+</form>
+<form method="POST" action="{%url 'core:cnl-fiches'  %}" class="form">
+    {% csrf_token %}
+    <!-- ANNULATION FICHES -->
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h3 class="mb-4" style="font-weight: bolder !important;"><b>ANNULATION DES FICHES</b></h3>
+        <div id="message_cnl" class="mt-2 pb-0 pt-0" style="display: none;">
+            <div id="alert_cnl" class="alert alert-danger alert-dismissible fade show" role="alert">
+            </div>
+        </div>
+        <a href="{% url 'core:hist-cnl' %}" class="mt-5 h5" target="_blank" style="color: grey !important;"><u>Consulter l'historique des annulations</u></a>
+        <div class="mt-4 form-row">
+            <div class="form-group col-md-2">
+                <label for="inputPassword4" class="col-form-label">QUANTITÉ</label>
+                <select class="custom-select" id="fiche_cnl_mode">
+                    <option value="UNE SEULE" selected>UNE SEULE FICHE</option>
+                    <option value="PLUSIEURS">PLUSIEURS FICHES</option>
+                </select>
+            </div>
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">A PARTIR DE LA FICHE N°</label>
+                <input type="number" min="0" class="form-control fiche" name="n_fiche_touchee_1" id="fiche_1" placeholder="N°">
+                <input type="hidden" id="fiche_hidden_1">
+            </div>
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">JUSQU'A LA FICHE N° (INCLUE)</label>
+                <input type="number" min="0" class="form-control fiche" name="n_fiche_touchee_2" id="fiche_2" placeholder="N°" readonly>
+                <input type="hidden" id="fiche_hidden_2">
+            </div>
+            <div class="form-group col-md-3">
+                <label for="inputPassword4" class="col-form-label">CAUSE DE L'ANNULATION</label>
+                <select name="cnl_cause_fiche" id="cnl_cause_fiche" class="custom-select" disabled>
+                    {% for cause in causes %}
+                    <option value="{{cause}}"> {{cause}} </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-12">
+                <label for="obs" class="col-form-label">OBSERVATION ( FACULTATIF )</label>
+                <textarea class="form-control" id="obs" name="obs" rows="3" disabled></textarea>
+            </div>
+        </div>
+        <button type="submit" id="submit-form-cnl" class="btn" style="color: white !important; background-color: #0e385b !important;" disabled><b>APPLIQUER</b></button>
+    </div>
+</form>
+
+
+<script>
+    
+    $('#escale').on('change', function(){
+        if($('#escale').val() != "('', '---------')"){
+            $('#submit-form-affect').prop('disabled', false);
+            $('#n_fiche_2').prop('disabled', false);
+        }
+        else{
+            $('#submit-form-affect').prop('disabled', true);
+            $('#n_fiche_2').val('');
+            $('#n_fiche_2').prop('disabled', true);
+        }
+    });
+
+    var typingTimer_dep;
+    var typingTimer_arr;
+    var typingTimer_fiche;
+
+    $('#escale').on('change', function(){
+        data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+        'escale': $('#escale').val()};
+        $.ajax({
+            type:'POST',
+            url: "{% url 'core:valid-escale' %}",
+            datatype: 'JSON',
+            data: data,
+            success: function(data){
+
+            }
+        });
+
+    });
+
+    $('#fiche_cnl_mode').on('change', function(){
+        if($(this).val() == 'PLUSIEURS'){
+            $('#fiche_2').prop('readonly', false);
+        }
+        else{
+            $('#fiche_2').prop('readonly', true);
+            $('#fiche_2').prop('value', '');
+        }
+    });
+
+    $('#fiche_1').on('keyup', function(e){
+        if($(this).val() != ''){
+            $('#cnl_cause_fiche').prop('disabled', false);
+            $('#obs').prop('disabled', false);
+            $('#cnl_cause_fiche').val($("#cnl_cause_fiche option:first").val());
+            if($('#alert_cnl').children().length < 1){
+                $('#submit-form-cnl').prop('disabled', false);
+            }
+        }
+        else{
+            $('#cnl_cause_fiche').prop('disabled', true);
+            $('#obs').prop('disabled', true);
+            $('#cnl_cause_fiche').val(null);
+            $('#submit-form-cnl').prop('disabled', true);
+        }
+    });
+
+    $('.fiche').on('keyup', function (event) {
+        clearTimeout(typingTimer_fiche);
+        typingTimer_fiche = setTimeout(function(){doneTypingFiche(event)}, 250);
+    });
+
+    $('.fiche').on('keydown', function () {
+        clearTimeout(typingTimer_fiche);
+    });
+
+    function doneTypingFiche (e) {
+        // console.log(e.target.getAttribute('id'));
+        if(e.target.getAttribute('id') == 'n_fiche_2'){
+            ajax_fiche(e, '#n_fiche_1', '#n_fiche_2', '{% url "core:valid-affect-quota" %}', '#message_affect', '#alert_affect', 'submit-form-affect');
+        }
+        else if(e.target.getAttribute('id') == 'fiche_1' || e.target.getAttribute('id') == 'fiche_2'){
+            ajax_fiche(e, '#fiche_1', '#fiche_2', '{% url "core:valid-cnl-fiche" %}', '#message_cnl', '#alert_cnl', 'submit-form-cnl');
+        }
+        else{
+            ajax_fiche(e, '#n_fiche_touchee_1', '#n_fiche_touchee_2', '{% url "core:valid-fiche" %}', '#message_fiche', '#alert_fiche', 'submit-form');
+        }
+    }
+
+    function ajax_fiche(e, fiche1, fiche2, url, msg, alert, submit){
+        // console.log(e.target.getAttribute('id'));
+        var id = '#'.concat(e.target.getAttribute('id'));
+        var cnl = '';
+        if(fiche1 == '#fiche_1'){
+            cnl = 'cnl';
+        }
+        data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+        'n_fiche_touchee_1': $(fiche1).val(),
+        'n_fiche_touchee_2': $(fiche2).val(),
+        'cnl': cnl};
+        $.ajax({
+            type:'POST',
+            url: url,
+            datatype: 'JSON',
+            data: data,
+            success: function(data){
+                console.log(data)
+                if(data.exist){
+                    if($(alert).children().length > 0){
+                        // $(msg).slideToggle("slow");
+                        $(alert).find('.msg').remove();
+                        $(alert).append('<p class="msg"><b>' + data.msg + '</b></p>');
+                    }
+                    if($(alert).children().length < 1){
+                        $(msg).addClass(data.status);
+                        $(alert).append('<p class="msg"><b>' + data.msg + '</b></p>');
+                        $(msg).slideToggle("slow");
+                        document.getElementById(submit).disabled = true;
+                    }
+                }
+                else{
+                    if($(alert).children().length > 0){
+                        $(msg).slideToggle("slow");
+                        $(alert).find('.msg').remove()
+                        $(msg).removeClass($(msg).attr('class').split(' ').pop());
+                        document.getElementById(submit).disabled = false;
+                    }
+                }
+            }  
+        });
+    }
+
+    $('form').submit(function(e) {
+        $(':disabled').each(function(e) {
+            $(this).removeAttr('disabled');
+        })
+    });
+    
+
+</script>
+
+
+{% endblock content %}
