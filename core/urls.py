@@ -42,6 +42,9 @@ from .views import (
     HistRegularFact,
     validFactRegular,
     FactRegularDetail,
+    HistOPCompany,
+    luggage_view,
+    add_ahl,
 )
 
 app_name = 'core'
@@ -89,4 +92,7 @@ urlpatterns = [
     path('fact-regular/hist-regular-fact/', HistRegularFact.as_view(), name = 'hist-regular-fact'),
     path('valid-fact-regular/', validFactRegular.as_view(), name = 'valid-fact-regular'),
     path('fact-regular-detail/<slug>/', FactRegularDetail.as_view(), name = 'fact-regular-detail'),
+    path('compagnie-detail/<slug>/historic-operations-company/', HistOPCompany.as_view(), name = 'historic-operations-company'),
+    path('luggage-view/', luggage_view, name = 'luggage-view'),
+    path('luggage-view/add-ahl/', add_ahl, name = 'add-ahl'),
 ]

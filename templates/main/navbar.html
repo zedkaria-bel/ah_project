@@ -15,20 +15,51 @@
   
   <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
     <b>
-      <ul class="navbar-nav" style="font-family: 'Ubuntu-Medium' !important; font-size: large !important;">
+      <ul class="navbar-nav" style="font-family: 'Ubuntu-Medium' !important; font-size:medium !important;">
         {% if request.user.is_authenticated %}
         <li class="nav-item active ml-4">
-          <a class="nav-link" style="color: white !important;" href="{% url 'core:home-view' %}">Home <span class="sr-only">(current)</span></a>
+          <div class="d-flex flex-row d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#d2d2d2" class="bi bi-house-door-fill" viewBox="0 0 16 16">
+              <path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5z"/>
+            </svg>
+            <a class="nav-link" style="color: white !important;" href="{% url 'core:home-view' %}">Acceuil <span class="sr-only">(current)</span></a>
+          </div>
         </li>
+        {% if request.user.profile.poste == 'CHEF D\'ESCALE' %}
+        <li class="nav-item active ml-4">
+          <div class="d-flex flex-row d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#d2d2d2" class="bi bi-bag-fill" viewBox="0 0 16 16">
+              <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/>
+            </svg>
+            <a class="nav-link" style="color: white !important;" href="{% url 'core:luggage-view' %}">Bagages <span class="sr-only">(current)</span></a>
+          </div>
+        </li>
+        {% endif %}
         {% if request.user.profile.dpt == 'DPT CONTRATS ET ASSISTANCE AU SOL' %}
         <li class="nav-item ml-4">
-          <a class="nav-link" style="color: white !important;" href="{% url 'core:fact-regular' %}">Facturation<span class="sr-only">(current)</span></a>
+          <div class="d-flex flex-row d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#d2d2d2" class="bi bi-credit-card-2-back-fill" viewBox="0 0 16 16">
+              <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5H0V4zm11.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-2zM0 11v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1H0z"/>
+            </svg>
+            <a class="nav-link" style="color: white !important;" href="{% url 'core:fact-regular' %}">Facturation<span class="sr-only">(current)</span></a>
+          </div>
         </li>
         <li class="nav-item ml-4">
-          <a class="nav-link" style="color: white !important;" href="{% url 'core:dashboard' %}">Dashboard<span class="sr-only">(current)</span></a>
+          <div class="d-flex flex-row d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#d2d2d2" class="bi bi-graph-up" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/>
+            </svg>
+            <a class="nav-link" style="color: white !important;" href="{% url 'core:dashboard' %}">Statistiques<span class="sr-only">(current)</span></a>
+          </div>
         </li>
         <li class="nav-item ml-4">
-          <a class="nav-link" style="color: white !important;" href="{% url 'core:price-list' %}">Price List <span class="sr-only">(current)</span></a>
+          <div class="d-flex flex-row d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#d2d2d2" class="bi bi-tags-fill" viewBox="0 0 16 16">
+              <path d="M2 2a1 1 0 0 1 1-1h4.586a1 1 0 0 1 .707.293l7 7a1 1 0 0 1 0 1.414l-4.586 4.586a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 2 6.586V2zm3.5 4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+              <path d="M1.293 7.793A1 1 0 0 1 1 7.086V2a1 1 0 0 0-1 1v4.586a1 1 0 0 0 .293.707l7 7a1 1 0 0 0 1.414 0l.043-.043-7.457-7.457z"/>
+            </svg>
+            <a class="nav-link" style="color: white !important;" href="{% url 'core:price-list' %}">Price List <span class="sr-only">(current)</span></a>
+          </div>
         </li>
         {% endif %}
         <!-- <div class="dropdown">
@@ -45,10 +76,10 @@
           <div class="v1"></div>
         </li>
         <li class="nav-item ml-4 dropdown">
-          <a class="nav-link dropdown-toggle" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: white !important;" href="{{request.user.profile.get_absolute_url}}"> {{request.user.first_name|upper|add:' '|add:request.user.last_name}} </a>
+          <a class="nav-link dropdown-toggle" id="usr" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: white !important;" href="{{request.user.profile.get_absolute_url}}"> {{request.user.first_name|upper|add:' '|add:request.user.last_name}} </a>
           <div class="dropdown-menu" aria-labelledby="dropdownMenu2" style="background-color: #2e6fa5 !important;">
-            <button class="dropdown-item dwn" type="button">Mon Profile</button>
-            <a href="{% url 'account_logout' %}?next=/accounts/login/" class="dropdown-item dwn" type="button">LOGOUT</a>
+            <a href="#" class="dropdown-item dwn py-3 mb-0 h5" type="button">PROFILE</a>
+            <a href="{% url 'account_logout' %}?next=/accounts/login/" class="dropdown-item dwn py-3 mb-0 h5" type="button">LOGOUT</a>
           </div>
         </li>
         <!-- <li class="nav-item ml-4">
@@ -58,12 +89,12 @@
         </li> -->
         {% else %}
         <li class="nav-item ml-4">
-          <a class="nav-link waves-effect" href="{% url 'account_login' %}">
+          <a class="nav-link waves-effect" style="border: 1px white solid !important; border-radius: 4px;" href="{% url 'account_login' %}">
             <span class="clearfix d-none d-sm-inline-block"> Login </span>
           </a>
         </li>
         <li class="nav-item ml-4">
-          <a class="nav-link waves-effect" href="{% url 'account_signup' %}">
+          <a class="nav-link waves-effect" style="border-radius: 4px; background-color: white; color:#0e385b !important ;" href="{% url 'account_signup' %}">
             <span class="clearfix d-none d-sm-inline-block"> Signup </span>
           </a>
         </li>

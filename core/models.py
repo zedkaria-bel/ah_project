@@ -14,7 +14,7 @@ from django.utils.text import slugify
 from django.shortcuts import reverse
 import datetime
 from django.core.exceptions import ValidationError
-from .CONST import monnaie, poste, service_passager, service_ramp_piste, causes, dpt
+from .CONST import monnaie, poste, service_passager, service_ramp_piste, causes, dpt, TYPE, status
 
 def validate_date(date):
     if date < timezone.now().date():
@@ -721,6 +721,120 @@ class HISTORIQUE_REGULAR_FACT(models.Model):
 
     class Meta:
         db_table = 'HISTORIQUE_REGULAR_FACT'
+
+
+class HISTORIQUE_OP_COMPANY(models.Model):
+    _id = models.AutoField(primary_key=True)
+    date_last_add = models.DateTimeField(auto_now=True, db_column='DATE LAST ADD', blank=True, null=True)
+    company = models.ForeignKey(COMP_DISPATCHER, on_delete=models.CASCADE, db_column='COMPANY', blank=True, null=True)
+    old_solde = models.FloatField(db_column='OLD_SOLDE', blank=True, null=True)
+    date_old_solde = models.DateField(db_column='OLD SOLDE DATE', blank=True, null=True)
+    date_new_solde = models.DateField(db_column='NEW SOLDE DATE', blank=True, null=True)
+    new_solde = models.FloatField(db_column='NEW_SOLDE', blank=True, null=True)
+    slug = models.SlugField(null=True, blank=True)
+    user_add = models.ForeignKey(User, on_delete=models.CASCADE, db_column='USER', blank=True, null=True)
+
+    class Meta:
+        db_table = 'HISTORIQUE_OP_COMPANY'
+
+
+# DPT BAGAGES
+
+class BAG_RL(models.Model):
+    code = models.AutoField(primary_key=True)
+    rl = models.TextField(db_column='RL', null=True, blank=True)
+
+    class Meta:
+        db_table = 'BAG_RL'
+
+class BAG_ID_CHART(models.Model):
+    code = models.TextField(primary_key=True)
+    label = models.TextField(db_column='LABEL', null=True, blank=True)
+    sub_cat = models.TextField(db_column='SUB_CAT', null=True, blank=True)
+    cat = models.TextField(db_column='CAT', null=True, blank=True)
+
+    class Meta:
+        db_table = 'BAG_ID_CHART'
+
+class BAG_MRD_TYPE_DMG(models.Model):
+    code = models.TextField(primary_key=True)
+    label = models.TextField(db_column='LABEL', null=True, blank=True)
+    desc = models.TextField(db_column='DESC', null=True, blank=True)
+
+    class Meta:
+        db_table = 'BAG_MRD_TYPE_DMG'
+
+class BAG_SUIVI(models.Model):
+    _id = models.AutoField(primary_key=True)
+    date_claim = models.DateTimeField(auto_now=True, db_column='DTE RECL', null=True, blank=True)
+    escale_claim = models.TextField(db_column='STATION', blank=True, null=True)
+    file_type = models.TextField(db_column='FILE TYPE', null=True, blank=True, choices=TYPE)
+    ref = models.PositiveIntegerField(db_column='REF', blank=True, null=True)
+    flt = models.TextField(db_column='FLT', null=True, blank=True)
+    dte_flt = models.TextField(db_column='FLT_DATE', null=True, blank=True)
+    fs = models.TextField(db_column='FS', null=True, blank=True)
+    ft = models.TextField(db_column='FT', null=True, blank=True)
+    rl = models.ForeignKey(BAG_RL, db_column='RL', null=True, blank=True, on_delete=models.CASCADE)
+    prov = models.TextField(db_column='PROV', null=True, blank=True)
+    dest = models.TextField(db_column='DEST', blank=True, null=True)
+    status =  models.TextField(choices=status, blank=True, null=True)
+    n_file = models.TextField(db_column='N° FILE', blank=True, null=True)
+    pax_gender = models.TextField(db_column='GENDER', blank=True, null=True)
+    pax_first_name = models.TextField(db_column='PRENOM', null=True, blank=True)
+    pax_last_name = models.TextField(db_column='NOM', null=True, blank=True)
+    pax_age = models.PositiveIntegerField(db_column='AGE', null=True, blank=True)
+    pax_adr_pax = models.TextField(db_column='ADRESSE PAX', blank=True, null=True)
+    pax_phone = models.CharField(db_column='PHONE', null=True, blank=True, max_length=10)
+    pax_mail = models.TextField(db_column='MAIL', null=True, blank=True)
+    pax_zip_code = models.PositiveIntegerField(db_column='ZIP', null=True, blank=True)
+    pax_reg = models.TextField(db_column='REGION', blank=True, null=True)
+    pax_country_res = models.TextField(db_column='COUNTRY RES', blank=True, null=True)
+    pax_delivery_adr = models.TextField(db_column='DELIVERY ADDRESS', blank=True, null=True)
+    pax_stay_until = models.DateField(db_column='DLV ADR STAYS UNTIL', blank=True, null=True)
+    other_delivery_phone = models.CharField(db_column='OTHER PHONE', blank=True, null=True, max_length=10)
+    other_delivery_mail = models.TextField(db_column='OTHER MAIL', blank=True, null=True)
+    other_delivery_adr = models.TextField(db_column='OTHER ADDRESS', blank=True, null=True)
+    carte_fid = models.PositiveIntegerField(db_column='CARTE FID', blank=True, null=True)
+    file_conforme = models.BooleanField(db_column='CONFORME', default=False, blank=True, null=True)
+    file_complet = models.BooleanField(db_column='COMPLET', default=False, blank=True, null=True)
+    dte_prop = models.DateField(db_column='DATE PROPOSITION', blank=True, null=True)
+    esc_dest = models.TextField(db_column='DESTINATAIRE', blank=True, null=True)
+    montant_dzd = models.FloatField(db_column='DZD', blank=True, null=True)
+    montant_eur = models.FloatField(db_column='EUR', blank=True, null=True)
+    montant_usd = models.FloatField(db_column='USD', blank=True, null=True)
+    accord = models.BooleanField(default=False, blank=True, null=True)
+    dte_sign = models.DateField(db_column='DATE SIGN', blank=True, null=True)
+    dpt_dest = models.TextField(db_column='DPT DESTINATAIRE', blank=True, null=True)
+    dte_send_payment =  models.DateField(db_column='DATE SEND PAYMENT', blank=True, null=True)
+    dte_recept = models.DateField(db_column='DATE RECEPT PAYMENT', blank=True, null=True)
+    bord_env_ref = models.TextField(db_column='REF BORD ENV', blank=True, null=True)
+    bord_env_accord = models.BooleanField(default=False, blank=True, null=True)
+    rib_n = models.PositiveIntegerField(db_column = 'RIB VALUE', blank=True, null=True)
+    rib_key = models.PositiveIntegerField(db_column = 'RIB KEY', blank=True, null=True)
+    payment_status = models.TextField(db_column='PAYMENT STATUS', blank=True, null=True)
+    obs = models.TextField(db_column='OBS', blank=True, null=True)
+    search_status = models.TextField(db_column='SEARCH STATUS', blank=True, null=True)
+
+    class Meta:
+        db_table = 'BAG_SUIVI'
+    
+
+class BAG_DETAILS(models.Model):
+    _id = models.AutoField(primary_key=True)
+    suivi = models.ForeignKey(BAG_SUIVI, null=True, blank=True, on_delete=models.CASCADE)
+    bag_weight = models.FloatField(db_column='WEIGHT', null=True, blank=True)
+    bag_brand = models.TextField(db_column='BRAND NAME', blank=True, null=True)
+    bag_details = models.TextField(db_column='DETAILS', blank=True, null=True)
+    bag_phone = models.CharField(db_column='PHONE ON BAG', null=True, blank=True, max_length=10)
+    bag_id = models.TextField(db_column='BAG ID', null=True, blank=True)
+    content_dmg = models.TextField(db_column='CONTENT DMG', null=True, blank=True)
+    bag_dmg_mrd = models.TextField(db_column='BAG DMG ID MRD', null=True, blank=True)
+    n_tag = models.PositiveIntegerField(db_column='TAG', blank=True, null=True)
+    etkt = models.PositiveIntegerField(db_column='ETKT', blank=True, null=True)
+
+    class Meta:
+        db_table = 'BAG_DETAILS'
+
 
 @receiver(post_save, sender=User)
 def update_user_profile(sender, instance, created, **kwargs):

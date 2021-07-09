@@ -1,0 +1,98 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+{% load i18n %}
+
+{% block head_title %}
+Historique des opérations
+{% endblock head_title %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between mt-5">
+    <p class="h3 mb-5"><b>COMPAGNIE :</b> {{comp}} </p>
+    <p class="h3 mb-5"><b>MONNAIE :</b> {{monnaie}} </p>
+</div>
+
+<div class="table-responsive">
+    <table id="tab_op" class="table table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col"><b>#</b></th>
+            <th scope="col"><b>DATE</b></th>
+            <th scope="col"><b>DATE ANCIEN SOLDE</b></th>
+            <th scope="col"><b>ANCIEN SOLDE</b></th>
+            <th scope="col"><b></b></th>
+            <th scope="col"><b>NOUVEAU SOLDE</b></th>
+            <th scope="col"><b>DATE NOUVEAU DATE</b></th>
+            <th scope="col"><b>UTILISATEUR</b></th>
+          </tr>
+        </thead>
+        <tbody>
+            {% for fiche in object_list %}
+            <tr class="row_tab">
+                <th scope="row"><b>{{ forloop.counter0|add:page_obj.start_index }}</b></th>
+                <td><b>
+                    {% language 'fr' %}
+                        {{fiche.date_last_add|date:'d F Y - H:i'}}
+                    {% endlanguage %}
+                </b></td>
+                <td><b>
+                    {% language 'fr' %}
+                        {{fiche.date_old_solde|date:'d F Y'}}
+                    {% endlanguage %}
+                </b></td>
+                <td><b>{{fiche.old_solde}} &nbsp; {{fiche.company.monnaie}} </b></td>
+                <td>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#2fc73e" class="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                        <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"/>
+                      </svg>
+                </td>
+                <td><b>{{fiche.new_solde}} &nbsp; {{fiche.company.monnaie}} </b></td>
+                <td><b>
+                    {% language 'fr' %}
+                        {{fiche.date_new_solde|date:'d F Y'}}
+                    {% endlanguage %}
+                </b></td>
+                <td><b>{{fiche.user_add.first_name}} {{fiche.user_add.last_name}} </b></td>
+            {% endfor %}     
+        </tbody>
+    </table>
+
+
+    <!-- PAGINATION -->
+    <nav aria-label="Page navigation example mt-5">   
+        <ul id="pagin" class="pagination pagination-lg justify-content-center mt-5">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+            <a class="page-link" href="?page=1" aria-label="Previous">
+                <span aria-hidden="true">PREVIOUS</span>
+                <span class="sr-only">begin</span>
+            </a>
+            </li>   {% endif %}
+            
+            {% for n in page_obj.paginator.page_range %}
+            {% if page_obj.number == n %}
+                <li class="page-item active page-active">
+                <span class="page-link">{{ n }}<span class="sr-only">(current)</span></span>
+                </li>
+            {% elif n > page_obj.number|add:'-5' and n < page_obj.number|add:'5' %}
+                <li class="page-item"><a class="page-link" href="?page={{ n }}">{{ n }}</a></li>
+            {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Next">
+                <span aria-hidden="true">NEXT</span>
+                <span class="sr-only">end</span>
+                </a>
+            </li>
+            {% endif %}   
+        </ul>
+    </nav>
+    
+</div>
+
+
+{% endblock content %}

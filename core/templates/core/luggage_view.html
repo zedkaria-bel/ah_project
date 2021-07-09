@@ -1,0 +1,49 @@
+{% extends 'main/base.html' %}
+
+
+{% block content %}
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+        <p class="mb-0 msg">{{ message }}</p>
+        <button type="button" class="close align-items-center mb-0" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="dropdown">
+    <button class="btn fixed-top btn-lg my-0 p float-right dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: white !important; background-color: #0e385b !important;">
+      AJOUTER
+    </button>
+    <div id="add-bag" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+      <li class="ch"><a class="dropdown-item py-3 h5 mb-0 text-center" href="{% url 'core:add-ahl' %}">AHL</a></li>
+      <li class="ch"><a class="dropdown-item py-3 h5 mb-0 text-center" href="#">DPR</a></li>
+      <li class="ch"><a class="dropdown-item py-3 h5 mb-0 text-center" href="#">OHD</a></li>
+    </div>
+</div>
+
+<!-- <a href="{% url 'core:fiche-touchee' %}" class="btn fixed-top btn-lg my-0 p float-right" style="color: white !important; background-color: #0e385b !important;">
+    <b>AJOUTER</b>
+</a> -->
+
+
+<script>
+
+    function Delete_message(){
+        $('#div-msg').slideToggle('slow');
+        $('#exist').children().first().remove();
+    }
+
+    window.onload = function(){
+        if($('#exist').children().length > 1){
+            setTimeout(Delete_message, 6000);
+        }
+    };
+
+</script>
+
+{% endblock content %}

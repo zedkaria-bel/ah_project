@@ -19,7 +19,7 @@ from django.db.models.fields import BLANK_CHOICE_DASH
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from django.core import serializers
+from django.core.serializers import serialize
 from django.utils.text import slugify
 import pandas as pd
 import numpy as np
@@ -39,6 +39,8 @@ from .models import (
     HISTORIQUE_AFFECT_QUOTA,
     HISTORIQUE_CNL_FICHES,
     HISTORIQUE_REGULAR_FACT,
+    HISTORIQUE_OP_COMPANY,
+    BAG_SUIVI, BAG_ID_CHART, BAG_MRD_TYPE_DMG, BAG_RL,
 )
 
 import requests
@@ -1138,10 +1140,21 @@ class ValidNewCompany(View):
             messages.success(request, 'La compagnie a été ajoutée avec succès')
         else:
             # COMP_DISPATCHER.objects.filter(company_dispatcher=request.POST.get('company_dispatcher')).delete()
+            old_solde = obj.solde
+            date_old_solde = obj.solde_date
             obj, created = COMP_DISPATCHER.objects.update_or_create(
                 company_dispatcher=request.POST.get('company_dispatcher'),
                 defaults = dic,
             )
+            hist_comp = HISTORIQUE_OP_COMPANY.objects.create(
+                company = obj,
+                old_solde = old_solde,
+                date_old_solde = date_old_solde,
+                new_solde = obj.solde,
+                date_new_solde = obj.solde_date,
+                user_add = request.user
+            )
+            hist_comp.save()
             messages.success(request, 'La compagnie a été modifié avec succès')
         obj.solde_last_edit = timezone.now()
         obj.user_last_edit = request.user.first_name + ' ' + request.user.last_name
@@ -1205,13 +1218,15 @@ class ValidPriceList(View):
 
 class FichesTouchee(ListView):
     template_name = 'core/fiches_touchee.html'
-    model = FICHE_TOUCHEE
     ordering = ['n_fiche']
 
     def get_context_data(self, *args,**kwargs):
         context = super(FichesTouchee, self).get_context_data(*args, **kwargs)
         context['title'] = 'GESTION DES FICHES DE TOUCHéeS'.upper()
         return context
+    
+    def get_queryset(self):
+        return FICHE_TOUCHEE.objects.all()
 
 def gestion_affect_fiches(request):
     max_fiche = list(FICHE_TOUCHEE.objects.aggregate(Max('n_fiche')).values())
@@ -1756,7 +1771,7 @@ def dashboard(request):
     for month in range(1, 13):
         months.append(month)
     context = {
-        'title' : "TABLEAU DE BORD".upper(),
+        'title' : "VOLET STATISTIQUE".upper(),
         'companies': BLANK_CHOICE_DASH + ['TOUTES'] + list(COMP_DISPATCHER.objects.filter()),
         'escales': BLANK_CHOICE_DASH + list(ESCALES.objects.all()),
         'years': BLANK_CHOICE_DASH + list(years),
@@ -1905,4 +1920,63 @@ class FactRegularDetail(DetailView):
         context['monnaie'] = comp.monnaie            
         return context
 
+class HistOPCompany(ListView):
+    template_name = 'core/hist_op_company.html'
+    paginate_by = 20
+
+    def get_context_data(self, *args,**kwargs):
+        context = super(HistOPCompany, self).get_context_data(*args, **kwargs)
+        context['title'] = 'HISTORIQUE DES OPéRATIONS'.upper()
+        obj = COMP_DISPATCHER.objects.get(slug = self.kwargs['slug'])
+        context['monnaie'] = obj.monnaie
+        context['comp'] = obj.company_dispatcher
+        return context
+    
+    def get_queryset(self):
+        return HISTORIQUE_OP_COMPANY.objects.filter(company = COMP_DISPATCHER.objects.get(slug = self.kwargs['slug'])).order_by('-date_last_add')
+
+
+# BAG
+
+def luggage_view(request):
+    context = {
+        'title': 'ACCEUIL'
+    }
+    return render(request, 'core/luggage_view.html', context)
+
+context = {
+    'title': "AJOUT D'UN AHL",
+    'status': list(status),
+    'rl': list(BAG_RL.objects.all()),
+    'bag_id_colours': list(BAG_ID_CHART.objects.filter(cat='Colour Codes')),
+    'bag_id_type_codes_nz': list(BAG_ID_CHART.objects.filter(cat='Type Codes', sub_cat='Non-zippered Bags')),
+    'bag_id_type_codes_z': list(BAG_ID_CHART.objects.filter(cat='Type Codes', sub_cat='zippered Bags')),
+    'misc_specials': list(BAG_ID_CHART.objects.filter(cat='Miscllaneous Articles', sub_cat='Special containers')),
+    'misc_sport': list(BAG_ID_CHART.objects.filter(cat='Miscllaneous Articles', sub_cat='Sporting Goods')),
+    'misc_child': list(BAG_ID_CHART.objects.filter(cat='Miscllaneous Articles', sub_cat='Child / Infant')),
+    'misc_photo': list(BAG_ID_CHART.objects.filter(cat='Miscllaneous Articles', sub_cat='Photographic/Electronic/Musical/Communications Equipment')),
+    'misc_inse': list(BAG_ID_CHART.objects.filter(cat='Miscllaneous Articles', sub_cat='Item Not Shown Elsewhere')),
+    'bag_id_other_type_codes_inse': list(BAG_ID_CHART.objects.filter(cat='Type Codes', sub_cat='Item Not Shown Elsewhere')),
+    'bag_id_other_type_codes_basic': list(BAG_ID_CHART.objects.filter(cat='Type Codes', sub_cat='Basic Element')),
+    'bag_id_other_type_codes_ext': list(BAG_ID_CHART.objects.filter(cat='Type Codes', sub_cat='External Element')),
+}
+
+def add_ahl(request, context = context):
+    context['title'] = "AJOUT D'UN AHL"
+    try:
+        maxid = BAG_SUIVI.objects.filter(file_type = 'AHL').filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
+        obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
+        maxid = re.search('(\d+)/', obj.n_file).group(1)
+    except BAG_SUIVI.DoesNotExist:
+        maxid = '0'
+    context['n_file'] = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
+    return render(request, 'core/add-bag-case.html', context)
+
+def add_dpr(request, context = context):
+    context['title'] = "AJOUT D'UN DPR"
+    return render(request, 'core/add-bag-case.html', context)
+
+def add_ohd(request, context = context):
+    context['title'] = "AJOUT D'UN OHD"
+    return render(request, 'core/add-bag-case.html', context)
 

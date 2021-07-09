@@ -166,6 +166,7 @@ def src_to_df(file):
     return df
 
 def df_to_postgres(df, con, cursor, engine, tab_name):
+    print(df.columns.to_list())
     if tab_name.startswith('FLIGHT'):
         pk = '("KEY_FLT")'
     elif tab_name.startswith('CHG'):
@@ -195,8 +196,11 @@ def df_to_postgres(df, con, cursor, engine, tab_name):
             df.insert(0, 'ID', range(1, 1 + len(df)))
         df.to_sql(tab_name, engine, if_exists='replace', index=False)
         # print('table ' + tab_name + ' cree')
-    with engine.connect() as conn:
-        conn.execute('ALTER TABLE public."' + tab_name + '" ADD PRIMARY KEY ' + pk + ';')
+    try:
+        with engine.connect() as conn:
+            conn.execute('ALTER TABLE public."' + tab_name + '" ADD PRIMARY KEY ' + pk + ';')
+    except sqlalchemy.exc.ProgrammingError:
+        pass
 
 #fonction qui retourne le dataframe des vols modifié avec les columns associé
 def fi_modifie(df_new,df_old):

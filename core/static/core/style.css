@@ -545,10 +545,10 @@ table td, table th{
         transition: .25s ease-out;
     }
 
-    .dropdown-item:hover{
+    /* .dropdown-item:hover{
         color: #0e385b !important;
         background-color: white !important;
-    }
+    } */
 
     .v1 {
         border-left: 1.5px solid white;
@@ -748,9 +748,23 @@ table td, table th{
         border-bottom: 1px #e0e0e0 solid;
       }
 
-      table.dataTable tbody td {
+      table.dataTable tbody td, table.dataTable tbody th {
         height: 40px !important;
         vertical-align: middle !important;
       }
+
+      #add-bag{
+        background-color: #2e6fa5 !important;
+      }
+
+      #add-bag > li > a{
+        color: white !important;
+      }
+
+      #add-bag > li > a:hover, .dropdown-menu a:hover {
+        background-color: #64ade8 !important;
+      }
+
+      
     
 /* END PROFILE PAGE */

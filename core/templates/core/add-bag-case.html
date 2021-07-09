@@ -1,0 +1,472 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+{% load static %}
+
+{% block head_title %}
+{% if 'AJOUT' in title %}
+AJOUT D'UN NOUVEAU CAS
+{% else %}
+Détails
+{% endif %}
+{% endblock head_title %}
+
+{% block content %}
+
+<link
+     rel="stylesheet"
+     href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"
+   />
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+
+   <link rel="stylesheet" href="{% static 'core/country-picker-flags/build/css/countrySelect.css' %}">
+    <script src="{% static 'core/country-picker-flags/build/js/countrySelect.js' %}"></script>
+
+<form method="POST" action="#" enctype="multipart/form-data" class="form">
+    {% csrf_token %}
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h3 style="font-weight: bolder !important;"><b>LE PASSAGER</b></h3>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LE PASSAGER EN QUESTION</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+        <div class="form-row">
+            <div class="form-group col-sm-2">
+                <label for="pax_last_name" class="col-form-label">Nom</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='pax_last_name' name="pax_last_name" class="form-control" placeholder="Nom" required>
+                {% else %}
+                <input type="text" id='pax_last_name' value="{{obj.pax_last_name}}" name="pax_last_name" class="form-control" placeholder="Nom" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="pax_first_name" class="col-form-label">Prénom</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='pax_first_name' name="pax_first_name" class="form-control" placeholder="Prénom" required>
+                {% else %}
+                <input type="text" id='pax_first_name' value="{{obj.pax_first_name}}" name="pax_first_name" class="form-control" placeholder="Prénom" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-1">
+                <label for="pax_age" class="col-form-label">Age</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" id='pax_age' name="pax_age" class="form-control" placeholder="Age" required>
+                {% else %}
+                <input type="number" min="0" id='pax_age' value="{{obj.pax_age}}" name="pax_age" class="form-control" placeholder="Age" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-1">
+                <label for="pax_age" class="col-form-label">Sexe</label>
+                {% if 'AJOUT' in title %}
+                <select class="custom-select" name="pax_gender" id="pax_gender" required>
+                    <option value="hm" selected>HOMME</option>
+                    <option value="fm">FEMME</option>
+                </select>
+                {% else %}
+                <select class="custom-select" name="pax_gender" id="pax_gender" required>
+                    <option value="HOMME" {% if obj.pax_gender == 'HOMME' %} selected {% endif %}>HOMME</option>
+                    <option value="FEMME" {% if obj.pax_gender == 'FEMME' %} selected {% endif %}>FEMME</option>
+                </select>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-6">
+                <label for="pax_adr_pax" class="col-form-label">Adresse</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='pax_adr_pax' name="pax_adr_pax" class="form-control" placeholder="Adresse ..." required>
+                {% else %}
+                <input type="text" id='pax_adr_pax' value="{{obj.pax_adr_pax}}" name="pax_adr_pax" class="form-control" placeholder="Adresse ..." required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="pax_phone" class="col-form-label">Numéro de téléphone</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" id='pax_phone' name="pax_phone" class="form-control" required>
+                {% else %}
+                <input type="tel" id='pax_phone' value="{{obj.pax_phone}}" name="pax_adr_pax" class="form-control" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="pax_mail" class="col-form-label">Addresse E-mail</label>
+                {% if 'AJOUT' in title %}
+                <input type="email" id='pax_mail' name="pax_mail" class="form-control" placeholder="E-mail ..." >
+                {% else %}
+                <input type="email" id='pax_mail' value="{{obj.pax_mail}}" name="pax_mail" class="form-control" placeholder="E-mail ..." readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="pax_zip_code" class="col-form-label">Code postal</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" id='pax_zip_code' name="pax_zip_code" class="form-control" placeholder="Code postal" required>
+                {% else %}
+                <input type="number" min="0" id='pax_zip_code' value="{{obj.pax_zip_code}}" name="pax_zip_code" class="form-control" placeholder="Code postal" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="pax_country_res" class="col-form-label">Résidence</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='pax_country_res' name="pax_country_res" class="form-control" placeholder="Pays" required>
+                {% else %}
+                <input type="text" id='pax_country_res' value="{{obj.pax_country_res}}" name="pax_country_res" class="form-control" placeholder="Pays" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="pax_reg" class="col-form-label">Région</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" min="0" id='pax_reg' name="pax_reg" class="form-control" placeholder="Région" required>
+                {% else %}
+                <input type="text" min="0" id='pax_reg' value="{{obj.pax_reg}}" name="pax_reg" class="form-control" placeholder="Région" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-md-2">
+                <label for="carte_fid" class="col-form-label">Carte fidélité ( Optionnel )</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" maxlength="10" id='carte_fid' name="carte_fid" class="form-control" placeholder="AHXXXXXXXX" required>
+                {% else %}
+                <input type="text" maxlength="10" id='carte_fid' value="{{obj.carte_fid}}" name="carte_fid" class="form-control" placeholder="AHXXXXXXXX" required readonly>
+                {% endif %}
+            </div>
+            {% if 'OHD' not in title %}
+            <div class="form-group col-sm-2">
+                <label for="pax_country_res" class="col-form-label">Livraison</label>
+                {% if 'AJOUT' in title %}
+                <select class="custom-select" name="deliv" id="deliv" required>
+                    <option value="himself" selected>LE PASSAGER LUI MÊME</option>
+                    <option value="other">AUTRUI</option>
+                </select>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="deliv_infos">
+            <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LIVRAISON</b></h5>
+            <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="pax_delivery_adr" class="col-form-label">Adresse de livraison</label>
+                    {% if 'AJOUT' in title %}
+                    <input type="text" id='pax_delivery_adr' name="pax_delivery_adr" placeholder="Adresse" class="form-control" >
+                    {% else %}
+                    <input type="text" id='pax_delivery_adr' value="{{obj.pax_delivery_adr}}" name="pax_delivery_adr" placeholder="Adresse" class="form-control" readonly>
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="pax_stay_until" class="col-form-label">Résidant à cette adresse jusqu'au</label>
+                    {% if 'AJOUT' in title %}
+                    <input type="date" id='pax_stay_until' name="pax_stay_until" placeholder="Date" class="form-control">
+                    {% else %}
+                    <input type="date" id='pax_stay_until' value="{{obj.pax_stay_until}}" name="pax_stay_until" class="form-control" readonly>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="other_prs" style="display: none !important;">
+            <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LA PERSONNE EN CHARGE DE RECEPTION</b></h5>
+            <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+            <div class="form-row">
+                <div class="form-group col-md-2">
+                    <label for="other_delivery_phone" class="col-form-label">Numéro de téléphone</label>
+                    {% if 'AJOUT' in title %}
+                    <input type="number" id='other_delivery_phone' name="other_delivery_phone" class="form-control" >
+                    {% else %}
+                    <input type="number" id='other_delivery_phone' value="{{obj.other_delivery_phone}}" name="other_delivery_phone" class="form-control" readonly>
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="other_delivery_mail" class="col-form-label">E-mail</label>
+                    {% if 'AJOUT' in title %}
+                    <input type="email" id='other_delivery_mail' name="pax_delivery_mail" placeholder="Email" class="form-control">
+                    {% else %}
+                    <input type="email" id='other_delivery_mail' value="{{obj.other_delivery_mail}}" name="other_delivery_mail" class="form-control" readonly>
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="other_delivery_adr" class="col-form-label">Adresse</label>
+                    {% if 'AJOUT' in title %}
+                    <input type="text" id='other_delivery_adr' name="other_delivery_adr" placeholder="Adresse" class="form-control" >
+                    {% else %}
+                    <input type="text" id='other_delivery_adr' value="{{obj.other_delivery_adr}}" name="other_delivery_adr" class="form-control"  readonly>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h3 style="font-weight: bolder !important;"><b>LA RÉCLAMATION</b></h3>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>DOSSIER ET VOL</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+        <div class="form-row">
+            <div class="form-group col-sm-2">
+                <label for="file_type" class="col-form-label">Type du dossier</label>
+                {% if 'AJOUT' in title %}
+                <select class="custom-select" name="file_type" id="file_type" required disabled>
+                    <option value="ahl" {% if 'AHL' in title %} selected {% endif %} >AHL</option>
+                    <option value="dpr" {% if 'DPR' in title %} selected {% endif %} >DPR</option>
+                    <option value="ohd" {% if 'OHD' in title %} selected {% endif %} >OHD</option>
+                </select>
+                {% else %}
+                <select class="custom-select" name="pax_gender" id="pax_gender" required>
+                    <option value="HOMME" {% if obj.pax_gender == 'HOMME' %} selected {% endif %}>HOMME</option>
+                    <option value="FEMME" {% if obj.pax_gender == 'FEMME' %} selected {% endif %}>FEMME</option>
+                </select>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="ref" class="col-form-label">Référence</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" pattern="/^-?\d+\.?\d*$/" onKeyPress="if(this.value.length==5) return false;" id='ref' name="ref" class="form-control" placeholder="Référence" required>
+                {% else %}
+                <input type="number" pattern="/^-?\d+\.?\d*$/" onKeyPress="if(this.value.length==5) return false;" id='ref' value="{{obj.ref}}" name="ref" class="form-control" placeholder="Référence" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="flt" class="col-form-label">N° Vol</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='flt' name="flt" class="form-control" placeholder="N° Vol" required>
+                {% else %}
+                <input type="text" id='flt' value="{{obj.flt}}" name="flt" class="form-control" placeholder="N° Vol" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="dte_flt" class="col-form-label">Date du Vol</label>
+                {% if 'AJOUT' in title %}
+                <input type="date" id='dte_flt' name="dte_flt" class="form-control" placeholder="Date" required>
+                {% else %}
+                <input type="text" id='dte_flt' value="{{obj.dte_flt|date:'d-m-Y'}}" name="dte_flt" class="form-control" placeholder="N° Vol" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="fs" class="col-form-label">Fault Station</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='fs' name="fs" class="form-control" placeholder="Station" required>
+                {% else %}
+                <input type="text" id='fs' value="{{obj.fs}}" name="fs" class="form-control" placeholder="N° Vol" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="ft" class="col-form-label">Fault Terminal</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='ft' name="ft" class="form-control" placeholder="Station" required>
+                {% else %}
+                <input type="text" id='ft' value="{{obj.ft}}" name="ft" class="form-control" placeholder="N° Vol" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-4">
+                <label for="rl" class="col-form-label">Reason Loss ( RL )</label>
+                {% if 'AJOUT' in title %}
+                <select class="custom-select" name="rl" id="rl" required>
+                    {% for item in rl %}
+                    <option value="{{item.code}}"> {{item.code}} - {{item.rl}} </option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <input type="text" id='ft' value="{{obj.ft}}" name="ft" class="form-control" placeholder="N° Vol" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="prov" class="col-form-label">Provenance</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='prov' name="prov" class="form-control" placeholder="Provenance" required>
+                {% else %}
+                <input type="text" id='prov' value="{{obj.prov}}" name="prov" class="form-control" placeholder="Provenance" required readonly>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="dest" class="col-form-label">Destination</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='dest' name="dest" class="form-control" placeholder="Destination" required>
+                {% else %}
+                <input type="text" id='dest' value="{{obj.dest}}" name="dest" class="form-control" placeholder="Destination" required readonly>
+                {% endif %}
+            </div>
+            {% if 'AJOUT' not in title %}
+            <div class="form-group col-sm-2">
+                <label for="search_status" class="col-form-label">Recherche</label>
+                <select class="custom-select" name="search_status" id="search_status" required>
+                    <option value="PRIMAIRE" {% if obj.search_status == 'PRIMAIRE' %} selected {% endif %} >PRIMAIRE</option>
+                    <option value="SECONDAIRE" {% if obj.search_status == 'SECONDAIRE' %} selected {% endif %} >SECONDAIRE</option>
+                </select>
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="status" class="col-form-label">Status</label>
+                <select class="custom-select" name="status" id="status" required>
+                    {% for st in status %}
+                    <option value="{{st.1}}" {% if obj.status == st.1 %} selected {% endif %} >{{st.1}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="form-group col-sm-2">
+                <label for="n_file" class="col-form-label">N° Dossier</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='n_file' name="n_file" value="{{n_file}}" class="form-control" placeholder="N° dossier" required readonly>
+                {% else %}
+                <input type="text" id='n_file' value="{{obj.n_file}}" name="n_file" class="form-control" placeholder="N° dossier" required readonly>
+                {% endif %}
+            </div>
+        </div>
+        {% if request.user.profile.dpt == 'DPT RECHERCHES ET INDEMNISATION DES BAGAGES' %}
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>STATUS DU DOSSIER</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+        <div class="form-row">
+            <div class="form-group col-sm-3">
+                <label for="file_complet" class="col-form-label">Dossier complet ?</label>
+                {% if 'AJOUT' in title %}
+                <select class="custom-select" name="file_complet" id="file_complet" required>
+                    <option value="oui">OUI</option>
+                    <option value="non" selected>NON</option>
+                </select>
+                {% else %}
+                <select class="custom-select" name="file_complet" id="file_complet" required>
+                    <option value="oui" {% if obj.file_complet %} selected {% endif %} >OUI</option>
+                    <option value="non" {% if not obj.file_complet %} selected {% endif %} >NON</option>
+                </select>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-3">
+                <label for="file_conforme" class="col-form-label">Dossier conforme ?</label>
+                {% if 'AJOUT' in title %}
+                <select class="custom-select" name="file_conforme" id="file_conforme" required>
+                    <option value="oui">OUI</option>
+                    <option value="non" selected>NON</option>
+                </select>
+                {% else %}
+                <select class="custom-select" name="file_conforme" id="file_conforme" required>
+                    <option value="oui" {% if obj.file_conforme %} selected {% endif %} >OUI</option>
+                    <option value="non" {% if not obj.file_conforme %} selected {% endif %} >NON</option>
+                </select>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LE(S) BAGAGE(S)</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+        <div class="bag_card row">
+            <div class="d-flex justify-content-start row">
+                <p class="col-2 text-center align-self-center h5">Bagage N° <span class="n_bag">1</span> </p>
+                <div class="col-sm-10 row">
+                    <div class="form-group col-sm-1">
+                        <label for="bag_weight" class="col-form-label">Poids ( KG )</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="number" min="0" step="0.01" id='bag_weight' name="bag_weight" value="{{bag_weight}}" class="form-control" placeholder="Poids" required>
+                        {% else %}
+                        <input type="number" min="0" step="0.01" id='bag_weight' value="{{obj.bag_weight}}" name="bag_weight" class="form-control" placeholder="Poids" required readonly>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-2">
+                        <label for="bag_brand" class="col-form-label">Marque</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='bag_brand' name="bag_brand" value="{{bag_brand}}" class="form-control" placeholder="Marque" required>
+                        {% else %}
+                        <input type="text" id='bag_brand' value="{{obj.bag_brand}}" name="bag_brand" class="form-control" placeholder="Marque" required readonly>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label for="n_tag" class="col-form-label">Tag</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" maxlength="8" id='n_tag' name="n_tag" value="{{n_tag}}" class="form-control" placeholder="AHXXXXXX" required>
+                        {% else %}
+                        <input type="text" maxlength="8" id='n_tag' value="{{obj.n_tag}}" name="n_tag" class="form-control" placeholder="AHXXXXXX" required readonly>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-2">
+                        <label for="etkt" class="col-form-label">ETKT</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" maxlength="14" id='etkt' name="etkt" value="{{etkt}}" class="form-control" placeholder="ETKT" required>
+                        {% else %}
+                        <input type="text" maxlength="14" id='etkt' value="{{obj.etkt}}" name="etkt" class="form-control" placeholder="ETKT" required readonly>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-3">
+                        <label for="bag_details" class="col-form-label">Bagage détails</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='bag_details' name="bag_details" value="{{bag_details}}" class="form-control" placeholder="Ex : Ruban jaune sur la poignée" required>
+                        {% else %}
+                        <input type="text" id='bag_details' value="{{obj.bag_details}}" name="bag_details" class="form-control" placeholder="Ex : Ruban jaune sur la poignée" required readonly>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-3">
+                        <label for="bag_id" class="col-form-label">Bagage ID</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='bag_id' name="bag_id" class="form-control" placeholder="Ex : RD01CXX" required>
+                        {% else %}
+                        <input type="text" id='bag_id' value="{{obj.bag_id}}" name="bag_id" class="form-control" placeholder="Ex : RD01CXX" required readonly>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-3">
+                        <label for="bag_dmg_mrd" class="col-form-label">Bagage type of damage</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='bag_dmg_mrd' name="bag_dmg_mrd" class="form-control" placeholder="Ex : SIDE/04MA" required>
+                        {% else %}
+                        <input type="text" id='bag_dmg_mrd' value="{{obj.bag_dmg_mrd}}" name="bag_dmg_mrd" class="form-control" placeholder="Ex : SIDE/04MA" required readonly>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="content_dmg" class="col-form-label">Dommage du contenu</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='content_dmg' name="content_dmg" class="form-control" placeholder="Ex : Le contenu est mouillé" required>
+                        {% else %}
+                        <input type="text" id='content_dmg' value="{{obj.content_dmg}}" name="content_dmg" class="form-control" placeholder="Ex : Le contenu est mouillé" required readonly>
+                        {% endif %}
+                    </div>
+                    <p class="col-2 ml-4 mt-3 h5 align-self-center add_bag" style="cursor: pointer; background-color: white !important;">Ajouter un bagage</p>
+                </div>
+                <hr style="color: black !important;">
+            </div>          
+        </div>
+    </div>
+    <button type="submit" id="submit-form" class="btn btn-lg" style="color: white !important; background-color: #0e385b !important;" disabled><b>AJOUTER</b></button>
+</form>
+
+
+<script>
+
+    var cloneCount = 1;
+
+    $('.add_bag').on('click', function(){
+        $(".bag_card:last").clone(true, true).insertAfter("div.bag_card:last");
+        $('.bag_card:last input').each(function(){
+            $(this).attr('id', $(this).attr('id').slice(0,-1) + cloneCount.toString())
+        })
+        cloneCount++;
+        $('.n_bag:last').text((parseInt($('.n_bag:last').text()) + 1).toString())
+        $('div.bag_card:last').prev('div').find('.add_bag').remove();
+    });
+
+    $("#pax_country_res").countrySelect({
+        defaultCountry:"dz"
+    });
+
+    $('#deliv').on('change', function(){
+        if($('#deliv').val() == 'other'){
+            $('.other_prs').slideDown('slow');
+            $('#pax_delivery_phone').prop('required', true)
+            $('#pax_delivery_mail').prop('required', true)
+            $('#pax_delivery_adr').prop('required', true)
+            $('.deliv_infos').slideUp('slow');
+            $('#pax_delivery_adr').prop('required', false)
+            $('#pax_stay_until').prop('required', false)
+        }
+        else{
+            $('.other_prs').slideUp('slow');
+            $('#pax_delivery_phone').prop('required', false)
+            $('#pax_delivery_mail').prop('required', false)
+            $('#pax_delivery_adr').prop('required', false)
+            $('.deliv_infos').slideDown('slow');
+            $('#pax_delivery_adr').prop('required', true)
+            $('#pax_stay_until').prop('required', true)
+        }
+    })
+
+    const phoneInputField = document.querySelector("#pax_phone");
+    const phoneInput = window.intlTelInput(phoneInputField, {
+        initialCountry: "dz",
+        utilsScript:
+        "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+    });
+    const phoneInputField2 = document.querySelector("#pax_delivery_phone");
+    const phoneInput2 = window.intlTelInput(phoneInputField2, {
+        initialCountry: "dz",
+        utilsScript:
+        "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+    });
+  </script>
+
+{% endblock content %}
