@@ -24,6 +24,8 @@ Détails
 
 <form method="POST" action="#" enctype="multipart/form-data" class="form">
     {% csrf_token %}
+    <!-- PASSAGER -->
+    {% if 'OHD' not in title %}
     <div class="shadow p-3 mb-5 bg-white rounded w-100y">
         <h3 style="font-weight: bolder !important;"><b>LE PASSAGER</b></h3>
         <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LE PASSAGER EN QUESTION</b></h5>
@@ -188,6 +190,8 @@ Détails
             </div>
         </div>
     </div>
+    {% endif %}
+    <!-- RECLAMATION -->
     <div class="shadow p-3 mb-5 bg-white rounded w-100y">
         <h3 style="font-weight: bolder !important;"><b>LA RÉCLAMATION</b></h3>
         <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>DOSSIER ET VOL</b></h5>
@@ -361,9 +365,9 @@ Détails
                     <div class="form-group col-sm-1">
                         <label for="n_tag" class="col-form-label">Tag</label>
                         {% if 'AJOUT' in title %}
-                        <input type="text" maxlength="8" id='n_tag' name="n_tag" value="{{n_tag}}" class="form-control" placeholder="AHXXXXXX" required>
+                        <input type="text" maxlength="8" id='n_tag' name="n_tag" value="{{n_tag}}" class="form-control" placeholder="AHXXXXXX">
                         {% else %}
-                        <input type="text" maxlength="8" id='n_tag' value="{{obj.n_tag}}" name="n_tag" class="form-control" placeholder="AHXXXXXX" required readonly>
+                        <input type="text" maxlength="8" id='n_tag' value="{{obj.n_tag}}" name="n_tag" class="form-control" placeholder="AHXXXXXX" readonly>
                         {% endif %}
                     </div>
                     <div class="form-group col-2">
@@ -374,6 +378,7 @@ Détails
                         <input type="text" maxlength="14" id='etkt' value="{{obj.etkt}}" name="etkt" class="form-control" placeholder="ETKT" required readonly>
                         {% endif %}
                     </div>
+                    {% if 'DPR' not in title %}
                     <div class="form-group col-3">
                         <label for="bag_details" class="col-form-label">Bagage détails</label>
                         {% if 'AJOUT' in title %}
@@ -382,6 +387,7 @@ Détails
                         <input type="text" id='bag_details' value="{{obj.bag_details}}" name="bag_details" class="form-control" placeholder="Ex : Ruban jaune sur la poignée" required readonly>
                         {% endif %}
                     </div>
+                    {% endif %}
                     <div class="form-group col-3">
                         <label for="bag_id" class="col-form-label">Bagage ID</label>
                         {% if 'AJOUT' in title %}
@@ -390,6 +396,7 @@ Détails
                         <input type="text" id='bag_id' value="{{obj.bag_id}}" name="bag_id" class="form-control" placeholder="Ex : RD01CXX" required readonly>
                         {% endif %}
                     </div>
+                    {% if 'DPR' in title %}
                     <div class="form-group col-3">
                         <label for="bag_dmg_mrd" class="col-form-label">Bagage type of damage</label>
                         {% if 'AJOUT' in title %}
@@ -406,13 +413,34 @@ Détails
                         <input type="text" id='content_dmg' value="{{obj.content_dmg}}" name="content_dmg" class="form-control" placeholder="Ex : Le contenu est mouillé" required readonly>
                         {% endif %}
                     </div>
+                    {% endif %}
+                    {% if 'OHD' in title %}
+                    <div class="form-group col-4">
+                        <label for="bag_adr" class="col-form-label">Addresse mentionnée sur le bagage</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='bag_adr' name="bag_adr" class="form-control" placeholder="Addresse ...">
+                        {% else %}
+                        <input type="text" id='bag_adr' value="{{obj.bag_adr}}" name="bag_adr" class="form-control" placeholder="Addresse ..." readonly>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-3">
+                        <label for="bag_phone" class="col-form-label">Num. Tél. mentionnée sur le bagage</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="number" id='bag_phone' name="bag_phone" class="form-control" placeholder="Téléphone">
+                        {% else %}
+                        <input type="number" id='bag_phone' value="{{obj.bag_phone}}" name="bag_phone" class="form-control" placeholder="Téléphone" readonly>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if 'OHD' not in title %}
                     <p class="col-2 ml-4 mt-3 h5 align-self-center add_bag" style="cursor: pointer; background-color: white !important;">Ajouter un bagage</p>
+                    {% endif %}
                 </div>
-                <hr style="color: black !important;">
+                <hr class="mt-3" style="color: black !important;">
             </div>          
         </div>
     </div>
-    <button type="submit" id="submit-form" class="btn btn-lg" style="color: white !important; background-color: #0e385b !important;" disabled><b>AJOUTER</b></button>
+    <button type="submit" id="submit-form" class="btn btn-lg" style="color: white !important; background-color: #0e385b !important;"><b>AJOUTER</b></button>
 </form>
 
 

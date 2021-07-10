@@ -814,6 +814,8 @@ class BAG_SUIVI(models.Model):
     payment_status = models.TextField(db_column='PAYMENT STATUS', blank=True, null=True)
     obs = models.TextField(db_column='OBS', blank=True, null=True)
     search_status = models.TextField(db_column='SEARCH STATUS', blank=True, null=True)
+    user_last_edit = models.TextField(db_column='USER LAST EDIT',null=True, blank=True)
+    date_last_edit = models.DateTimeField(auto_now=True, db_column='DATE LAST EDIT', null=True, blank=True)
 
     class Meta:
         db_table = 'BAG_SUIVI'
@@ -826,6 +828,7 @@ class BAG_DETAILS(models.Model):
     bag_brand = models.TextField(db_column='BRAND NAME', blank=True, null=True)
     bag_details = models.TextField(db_column='DETAILS', blank=True, null=True)
     bag_phone = models.CharField(db_column='PHONE ON BAG', null=True, blank=True, max_length=10)
+    bag_adr = models.TextField(db_column='ADRESS ON BAG', null=True, blank=True)
     bag_id = models.TextField(db_column='BAG ID', null=True, blank=True)
     content_dmg = models.TextField(db_column='CONTENT DMG', null=True, blank=True)
     bag_dmg_mrd = models.TextField(db_column='BAG DMG ID MRD', null=True, blank=True)

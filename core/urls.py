@@ -44,7 +44,7 @@ from .views import (
     FactRegularDetail,
     HistOPCompany,
     luggage_view,
-    add_ahl,
+    add_ahl, add_dpr, add_ohd,
 )
 
 app_name = 'core'
@@ -95,4 +95,6 @@ urlpatterns = [
     path('compagnie-detail/<slug>/historic-operations-company/', HistOPCompany.as_view(), name = 'historic-operations-company'),
     path('luggage-view/', luggage_view, name = 'luggage-view'),
     path('luggage-view/add-ahl/', add_ahl, name = 'add-ahl'),
+    path('luggage-view/add-dpr/', add_dpr, name = 'add-dpr'),
+    path('luggage-view/add-ohd/', add_ohd, name = 'add-ohd'),
 ]

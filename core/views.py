@@ -1974,9 +1974,23 @@ def add_ahl(request, context = context):
 
 def add_dpr(request, context = context):
     context['title'] = "AJOUT D'UN DPR"
+    try:
+        maxid = BAG_SUIVI.objects.filter(file_type = 'DPR').filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
+        obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
+        maxid = re.search('(\d+)/', obj.n_file).group(1)
+    except BAG_SUIVI.DoesNotExist:
+        maxid = '0'
+    context['n_file'] = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
     return render(request, 'core/add-bag-case.html', context)
 
 def add_ohd(request, context = context):
     context['title'] = "AJOUT D'UN OHD"
+    try:
+        maxid = BAG_SUIVI.objects.filter(file_type = 'OHD').filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
+        obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
+        maxid = re.search('(\d+)/', obj.n_file).group(1)
+    except BAG_SUIVI.DoesNotExist:
+        maxid = '0'
+    context['n_file'] = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
     return render(request, 'core/add-bag-case.html', context)
 
