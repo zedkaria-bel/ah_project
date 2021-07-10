@@ -205,11 +205,6 @@ Détails
                     <option value="dpr" {% if 'DPR' in title %} selected {% endif %} >DPR</option>
                     <option value="ohd" {% if 'OHD' in title %} selected {% endif %} >OHD</option>
                 </select>
-                {% else %}
-                <select class="custom-select" name="pax_gender" id="pax_gender" required>
-                    <option value="HOMME" {% if obj.pax_gender == 'HOMME' %} selected {% endif %}>HOMME</option>
-                    <option value="FEMME" {% if obj.pax_gender == 'FEMME' %} selected {% endif %}>FEMME</option>
-                </select>
                 {% endif %}
             </div>
             <div class="form-group col-sm-2">
