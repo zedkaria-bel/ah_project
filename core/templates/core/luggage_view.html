@@ -1,4 +1,11 @@
 {% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+{% load i18n %}
+
+{% block head_title %}
+Annuaire
+{% endblock head_title %}
 
 
 {% block content %}
@@ -15,15 +22,200 @@
 </div>
 {% endif %}
 
-<div class="dropdown">
-    <button class="btn fixed-top btn-lg my-0 p float-right dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: white !important; background-color: #0e385b !important;">
-      AJOUTER
-    </button>
-    <div id="add-bag" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-      <li class="ch"><a class="dropdown-item py-3 h5 mb-0 text-center" href="{% url 'core:add-ahl' %}">AHL</a></li>
-      <li class="ch"><a class="dropdown-item py-3 h5 mb-0 text-center" href="{% url 'core:add-dpr' %}">DPR</a></li>
-      <li class="ch"><a class="dropdown-item py-3 h5 mb-0 text-center" href="{% url 'core:add-ohd' %}">OHD</a></li>
+<div class="d-flex flex-row mb-4">
+    <div class="d-flex flex-row d-flex align-items-center col-6">
+        <label for="pax_delivery_adr" class="col-form-label font-weight-bold mr-4"><b>Choisir &nbsp; :</b></label>
+        <form method="POST" action="{% url 'core:valid-case' %}" id="form" class="col-2">
+            {% csrf_token %}
+            <select class="custom-select" id="file_type" name="file_type">
+                <option value="AHL" {% if type == 'AHL' %} selected {% endif %} >AHL</option>
+                <option value="DPR" {% if type == 'DPR' %} selected {% endif %}>DPR</option>
+                <option value="OHD" {% if type == 'OHD' %} selected {% endif %}>OHD</option>
+            </select>
+        </form>
     </div>
+    {% if request.user.profile.dpt == 'DPT RECHERCHES ET INDEMNISATION DES BAGAGES' %}
+    <div class="dropdown ml-auto d-flex align-items-center">
+        <button class="btn fixed-top btn-lg my-0 p float-right dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: white !important; background-color: #0e385b !important;">
+        AJOUTER
+        </button>
+        <div id="add-bag" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <li class="ch"><a class="dropdown-item py-3 h5 mb-0 text-center" href="{% url 'core:add-ahl' %}">AHL</a></li>
+        <li class="ch"><a class="dropdown-item py-3 h5 mb-0 text-center" href="{% url 'core:add-dpr' %}">DPR</a></li>
+        <li class="ch"><a class="dropdown-item py-3 h5 mb-0 text-center" href="{% url 'core:add-ohd' %}">OHD</a></li>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="table-responsive">
+    <table id="table-bag-cases" class="table table-hover" style="font-size: 10px !important; width: 100% !important;">
+        <thead class="thead-light">
+          <tr>
+            <th class="py-3" scope="col"><b class="h6">#</b></th>
+            <th class="py-3" scope="col"><b class="h6">Enregistrement</b></th>
+            <th class="py-3" scope="col"><b class="h6">Date récéption dossier</b></th>
+            <th class="py-3" scope="col"><b class="h6">Escale</b></th>
+            <th class="py-3" scope="col"><b class="h6">Référence</b></th>
+            {% if 'DPR' in title or 'AHL' in title %}
+            <th class="py-3" scope="col"><b class="h6">Dossier conforme</b></th>
+            <th class="py-3" scope="col"><b class="h6">Status</b></th>
+            <th class="py-3" scope="col"><b class="h6">N° Dossier</b></th>
+            <th class="py-3" scope="col"><b class="h6">Montant proposé</b></th>
+            <th class="py-3" scope="col"><b class="h6">Accord</b></th>
+            <th class="py-3" scope="col"><b class="h6">Status paiement</b></th>
+            {% endif %}
+            <!-- {% if 'AHL' in title %}
+            <th class="py-3" scope="col"><b class="h6">Localisé ?</b></th>
+            {% endif %} -->
+            {% if 'OHD' in title %}
+            <th class="py-3" scope="col"><b class="h6">N° TAG</b></th>
+            {% endif %}
+            <th class="py-3" scope="col"><b class="h6">Détails</b></th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+            {% for request in object_list %}
+            <tr class="row_tab" style="border-bottom: 2px #d7d7d7 solid !important;">
+                <th class="py-4" scope="row"><b class="h6 font-weight-bold" >{{ forloop.counter }}</b></th>
+                <td class="py-4"><b class="h6 font-weight-bold">
+                    {% language 'fr' %}
+                        {{request.date_claim|days_since}}
+                    {% endlanguage %}
+                </b></td>
+                <td class="py-4"><b class="h6 font-weight-bold">
+                    {% language 'fr' %}
+                        {{request.dte_send_bcr|date:'d-m-Y'}}
+                    {% endlanguage %}
+                </b></td>
+                <td class="py-4"><b class="font-weight-bold" >{{request.escale_claim}}</b></td>
+                <td class="py-4"><b class="font-weight-bold mb-0" >{{request.ref}}</b></td>
+                {% if 'DPR' in title or 'AHL' in title %}
+                <td class="py-4"><b class="font-weight-bold" >
+                    {% if request.file_conforme is None %}
+                    -
+                    {% elif request.file_conforme %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#155fff" class="bi bi-check-lg" viewBox="0 0 16 16">
+                        <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                      </svg>
+                    {% else %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                      </svg>
+                    {% endif %}
+                </b></td>
+                <td class="py-3" style="font-size:2em !important;">
+                    {% if request.status is None %}
+                    <b class="font-weight-bold" >-</b>
+                    {% elif request.status == 'RECH. PRIMAIRE' %}
+                    <b class="font-weight-bold badge badge-primary" >PRIMAIRE</b>
+                    {% elif request.status == 'RECH. SECONDAIRE' %}
+                    <b class="font-weight-bold badge badge-info" >SECONDAIRE</b>
+                    {% elif request.status == 'EN COURS D\'INDEMNISATION' %}
+                    <b class="font-weight-bold badge badge-danger" >INDEMNISATION</b>
+                    {% elif request.status == 'SUSPENDU' %}
+                    <b class="font-weight-bold badge badge-warning" >{{request.status}}</b>
+                    {% else %}
+                    <b class="font-weight-bold badge badge-success" >{{request.status}}</b>
+                    {% endif %}
+                </td>
+                <td class="py-4"><b class="font-weight-bold" >
+                    {% if request.n_file is None %}
+                    -
+                    {% else %}
+                    {{request.n_file}}
+                    {% endif %}
+                </b></td>
+                <td class="py-4"><b class="font-weight-bold">
+                    {% if ind.monnaie is not None %}
+                    {% if monnaie == 'DZD' %} {{ind.montant_dzd}} {% else %} {{ind.montant_usd}} {% endif %} &nbsp; {{ind.monnaie}} 
+                    {% else %}
+                    -
+                    {% endif %}
+                </b></td>
+                <td class="py-4"><b class="font-weight-bold" > 
+                    {% if request.montant_usd is None %}
+                    -
+                    {% else %}
+                    {{request.accord}}
+                    {% endif %}
+                    </b></td>
+                <td class="py-4"><b class="font-weight-bold" >
+                    {% if request.montant_usd is None %}
+                    -
+                    {% else %}
+                    {{request.payment_status}}
+                    {% endif %}
+                </b></td>
+                {% endif %}
+                <!-- {% if 'AHL' in title %}
+                {% if request.match %}
+                <td class="py-4"><b class="font-weight-bold" ></b>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#155fff" class="bi bi-check-lg" viewBox="0 0 16 16">
+                        <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                    </svg>
+                </b></td>
+                {% else %}
+                <td class="py-4"><b class="font-weight-bold" ></b>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                    </svg>
+                </b></td>
+                {% endif %}
+                {% endif %} -->
+                {% if 'OHD' in title %}
+                <td class="py-4"><b class="font-weight-bold" >
+                    {% if request|bag_id is None %}
+                    -
+                    {% else %}
+                    {{request|bag_id}}
+                    {% endif %}
+                </b></td>
+                {% endif %}
+                <td class="py-4">
+                    <a href="{{request.get_absolute_url}}" target="_blank" class="d-flex justify-content-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">
+                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                        </svg>
+                    </a>
+                </td> 
+            </tr>
+            {% endfor %}     
+        </tbody>
+    </table>
+    
+    <!-- PAGINATION -->
+    <!-- <nav aria-label="Page navigation example mt-5">   
+        <ul id="pagin" class="pagination pagination-lg justify-content-center mt-5">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+            <a class="page-link" href="?page=1" aria-label="Previous">
+                <span aria-hidden="true">PREVIOUS</span>
+                <span class="sr-only">begin</span>
+            </a>
+            </li>   {% endif %}
+            
+            {% for n in page_obj.paginator.page_range %}
+            {% if page_obj.number == n %}
+                <li class="page-item active page-active">
+                <span class="page-link">{{ n }}<span class="sr-only">(current)</span></span>
+                </li>
+            {% elif n > page_obj.number|add:'-5' and n < page_obj.number|add:'5' %}
+                <li class="page-item"><a class="page-link" href="?page={{ n }}">{{ n }}</a></li>
+            {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Next">
+                <span aria-hidden="true">NEXT</span>
+                <span class="sr-only">end</span>
+                </a>
+            </li>
+            {% endif %}   
+        </ul>
+    </nav> -->
+
 </div>
 
 <!-- <a href="{% url 'core:fiche-touchee' %}" class="btn fixed-top btn-lg my-0 p float-right" style="color: white !important; background-color: #0e385b !important;">
@@ -33,16 +225,9 @@
 
 <script>
 
-    function Delete_message(){
-        $('#div-msg').slideToggle('slow');
-        $('#exist').children().first().remove();
-    }
-
-    window.onload = function(){
-        if($('#exist').children().length > 1){
-            setTimeout(Delete_message, 6000);
-        }
-    };
+    $('#file_type').on('change', function(){
+        $('#form').submit();
+    });
 
 </script>
 

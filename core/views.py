@@ -40,7 +40,8 @@ from .models import (
     HISTORIQUE_CNL_FICHES,
     HISTORIQUE_REGULAR_FACT,
     HISTORIQUE_OP_COMPANY,
-    BAG_SUIVI, BAG_ID_CHART, BAG_MRD_TYPE_DMG, BAG_RL,
+    BAG_SUIVI, BAG_ID_CHART, BAG_MRD_TYPE_DMG, BAG_RL, BAG_DETAILS, BAG_FLIGHTS,
+    BAG_HIST_INDEMN,
 )
 
 import requests
@@ -258,6 +259,10 @@ def home_view(request):
         return redirect('account_login')
     elif request.user.profile.escale is not None:
         return redirect('core:agent-summary')
+    elif request.user.profile.dpt == 'DPT RECHERCHES ET INDEMNISATION DES BAGAGES':
+        return redirect(reverse('core:luggage-view', kwargs = {
+            'opt' : 'ahl'
+        }))
     else:
         context = {
             'title' : 'ACCEUIL',
@@ -1938,15 +1943,44 @@ class HistOPCompany(ListView):
 
 # BAG
 
-def luggage_view(request):
-    context = {
-        'title': 'ACCEUIL'
-    }
-    return render(request, 'core/luggage_view.html', context)
+
+class luggage_view(ListView):
+    template_name = 'core/luggage_view.html'
+    ordering = ['-date_claim']
+
+    def get_queryset(self):
+        if self.kwargs['opt'] == 'ahl':
+            return BAG_SUIVI.objects.filter(file_type='AHL').order_by('-date_claim')
+        elif self.kwargs['opt'] == 'ohd':
+            return BAG_SUIVI.objects.filter(file_type='OHD').order_by('-date_claim')
+        else:
+            return BAG_SUIVI.objects.filter(file_type='DPR').order_by('-date_claim')
+
+    def get_context_data(self, *args,**kwargs):
+        context = super(luggage_view, self).get_context_data(*args, **kwargs)
+        if self.kwargs['opt'] == 'ahl':
+            context['title'] = 'ANNUAIRE DES AHL'
+            context['type'] = 'AHL'
+        elif self.kwargs['opt'] == 'ohd':
+            context['title'] = 'ANNUAIRE DES OHD'
+            context['type'] = 'OHD'
+        else:
+            context['title'] = 'ANNUAIRE DES DPR'
+            context['type'] = 'DPR'
+        if self.kwargs['opt'] != 'ohd':
+            context['ind'] = BAG_HIST_INDEMN.objects.filter(suivi = context['obj']).order_by('-_id').first()
+            if context['ind']:
+                if context['ind'].monnaie is None:
+                    context['amount'] = None
+                elif context['ind'].monnaie == 'DZD':
+                    context['amount'] = context['ind'].montant_dzd
+                else:
+                    context['amount'] = context['ind'].montant_usd
+        return context
 
 context = {
-    'title': "AJOUT D'UN AHL",
     'status': list(status),
+    'escales': list(ESCALES.objects.all()),
     'rl': list(BAG_RL.objects.all()),
     'bag_id_colours': list(BAG_ID_CHART.objects.filter(cat='Colour Codes')),
     'bag_id_type_codes_nz': list(BAG_ID_CHART.objects.filter(cat='Type Codes', sub_cat='Non-zippered Bags')),
@@ -1963,34 +1997,343 @@ context = {
 
 def add_ahl(request, context = context):
     context['title'] = "AJOUT D'UN AHL"
-    try:
-        maxid = BAG_SUIVI.objects.filter(file_type = 'AHL').filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
-        obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
-        maxid = re.search('(\d+)/', obj.n_file).group(1)
-    except BAG_SUIVI.DoesNotExist:
-        maxid = '0'
-    context['n_file'] = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
+    context['type'] = 'AHL'
+    context['tag'] = 'x'
+    # try:
+    #     maxid = BAG_SUIVI.objects.filter(file_type = 'AHL').filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
+    #     obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
+    #     maxid = re.search('(\d+)/', obj.n_file).group(1)
+    # except BAG_SUIVI.DoesNotExist:
+    #     maxid = '0'
+    # context['n_file'] = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
     return render(request, 'core/add-bag-case.html', context)
 
 def add_dpr(request, context = context):
     context['title'] = "AJOUT D'UN DPR"
-    try:
-        maxid = BAG_SUIVI.objects.filter(file_type = 'DPR').filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
-        obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
-        maxid = re.search('(\d+)/', obj.n_file).group(1)
-    except BAG_SUIVI.DoesNotExist:
-        maxid = '0'
-    context['n_file'] = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
+    context['type'] = 'DPR'
+    context['tag'] = 'x'
+    # try:
+    #     maxid = BAG_SUIVI.objects.filter(file_type = 'DPR').filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
+    #     obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
+    #     maxid = re.search('(\d+)/', obj.n_file).group(1)
+    # except BAG_SUIVI.DoesNotExist:
+    #     maxid = '0'
+    # context['n_file'] = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
     return render(request, 'core/add-bag-case.html', context)
 
 def add_ohd(request, context = context):
     context['title'] = "AJOUT D'UN OHD"
-    try:
-        maxid = BAG_SUIVI.objects.filter(file_type = 'OHD').filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
-        obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
-        maxid = re.search('(\d+)/', obj.n_file).group(1)
-    except BAG_SUIVI.DoesNotExist:
-        maxid = '0'
-    context['n_file'] = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
+    context['type'] = 'OHD'
+    context['tag'] = 'x'
+    # try:
+    #     maxid = BAG_SUIVI.objects.filter(file_type = 'OHD').filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
+    #     obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
+    #     maxid = re.search('(\d+)/', obj.n_file).group(1)
+    # except BAG_SUIVI.DoesNotExist:
+    #     maxid = '0'
+    # context['n_file'] = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
     return render(request, 'core/add-bag-case.html', context)
+
+class validBagCase(View):
+    def post(self, request):
+        # print(request.POST)
+        dic = dict(request.POST)
+        dic_bag = dict()
+        dic_flt = dict()
+        del dic['csrfmiddlewaretoken']
+        # dic_values = dic.items()
+        nb_bag = 0
+        if (dic['file_type'][0] == 'AHL' or dic['file_type'][0] == 'DPR') and dic['id'][0] == '0':
+            if int(dic['n_bag_received'][0]) + int(dic['n_bag_miss_dmg'][0]) != len(dic['bag_n_tag']):
+                messages.error(request, 'Veuillez renseigner tout les bagages (Reçus et manquants / endommagés) (' + str(int(dic['n_bag_received'][0]) + int(dic['n_bag_miss_dmg'][0])) + ')')
+                if dic['file_type'][0] == 'AHL':
+                    return redirect('core:add-ahl')
+                else:
+                    return redirect('core:add-dpr')
+        for key, value in dic.copy().items():
+            if key.startswith('bag'):
+                vals = []
+                if key == 'bag_weight':
+                    nb_bag = len(value)
+                for idx in value:
+                    if idx == '' or idx == 'null':
+                        vals.append(None)
+                    else:
+                        if key == 'bag_weight':
+                            vals.append(float(idx))
+                        else:
+                            if idx == 'oui':
+                                idx = True
+                            elif idx == 'non':
+                                idx = False
+                            vals.append(idx)
+                if len(vals) == 1:
+                    dic_bag[key] = vals[0]
+                else:
+                    dic_bag[key] = vals
+                del dic[key]
+            elif key == 'company' or key == 'flt' or key == 'dte_flt' or key == 'prov' or key == 'dest' or key == 'fs' or key == 'ft' or key == 'flt_obs' or key == 'n_flt':
+                # print(key, value)
+                vals = []
+                if key == 'n_flt':
+                    nb_flt = len(value)
+                for idx in value:
+                    if idx == '':
+                        vals.append(None)
+                    else:
+                        vals.append(idx)
+                if len(vals) == 1:
+                    dic_flt[key] = vals[0]
+                else:
+                    dic_flt[key] = vals
+                del dic[key]
+            else:
+                if value[0] == '' or value[0] == 'null':
+                    dic[key] = None
+                elif value[0] == 'oui':
+                    dic[key] = True
+                elif value[0] == 'non':
+                    dic[key] = False
+                else:
+                    if key == 'rl':
+                        obj = BAG_RL.objects.get(code = value[0])
+                        dic[key] = obj
+                    else:
+                        dic[key] = value[0]
+        # print(dic_bag)
+        if 'id' in dic:
+            del dic['id']
+        # save status
+        if request.POST.get('id') != '0':
+            old_conf = BAG_SUIVI.objects.get(_id = request.POST.get('id')).file_conforme
+            old_st = BAG_SUIVI.objects.get(_id = request.POST.get('id')).status
+        else:
+            old_conf = None
+            old_st = None
+        # max_suivi = BAG_SUIVI.objects.aggregate(Max('_id'))
+        # obj._id = max_suivi.get('_id__max') + 1
+        created = False
+        try:
+            obj = BAG_SUIVI.objects.get(_id = request.POST.get('id'))
+        except BAG_SUIVI.DoesNotExist:
+            obj, created = BAG_SUIVI.objects.get_or_create(
+                date_claim=datetime.datetime.now(),
+                defaults = dic
+            )
+        if created:
+            print('CREATED', obj.file_type)
+            # obj.date_claim = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+            if obj.file_type == 'AHL':
+                if obj.file_conforme:
+                    obj.status = 'RECH. SECONDAIRE'
+                else:
+                    obj.status = 'RECH. PRIMAIRE'
+            elif obj.file_type == 'DPR':
+                if obj.file_conforme:
+                    obj.status = 'EN COURS D\'INDEMNISATION'
+                else:
+                    obj.status = None
+            else:
+                obj.status = None
+            obj.user_last_edit = request.user.first_name + ' ' + request.user.last_name
+            # print(len(dic_bag['bag_weight']))
+            for idx in range(0, nb_bag):
+                # print(idx)
+                vals = dict()
+                for key, val in dic_bag.items():
+                    if nb_bag == 1:
+                        vals[key] = val
+                    else:
+                        vals[key] = val[idx]
+                bag_obj = BAG_DETAILS(**vals)
+                bag_obj.suivi = obj
+                bag_obj.save()
+            if 'n_flt' in dic_flt:
+                del dic_flt['n_flt']
+            for idx in range(0, nb_flt):
+                # print(idx)
+                vals = dict()
+                for key, val in dic_flt.items():
+                    if nb_flt == 1:
+                        vals[key] = val
+                    else:
+                        vals[key] = val[idx]
+                flt_obj = BAG_FLIGHTS(**vals)
+                flt_obj.suivi = obj
+                flt_obj.save()
+            obj.save()
+            messages.success(request, 'Nouveau cas crée avec succès !')
+            return redirect(reverse('core:luggage-view', kwargs = {
+                'opt' : 'ahl'
+            }))
+        else:
+            obj, created = BAG_SUIVI.objects.update_or_create(
+                _id = request.POST.get('id'),
+                defaults = dic
+            )
+            if old_conf is not None and obj.file_conforme != old_conf and obj.file_type == 'DPR':
+                # print('HERE')
+                obj.status = 'EN COURS D\'INDEMNISATION'.upper()
+                typ = obj.file_type
+                try:
+                    maxid = BAG_SUIVI.objects.filter(file_type = typ).filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
+                    obj_max = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
+                    maxid = re.search('(\d+)/', obj_max.n_file).group(1)
+                except (BAG_SUIVI.DoesNotExist, TypeError):
+                    maxid = '0'
+                obj.n_file = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
+                indemn_obj = BAG_HIST_INDEMN.objects.create(
+                    suivi = obj,
+                    dte_prop = None,
+                    esc_dest = obj.escale_claim,
+                    monnaie = None,
+                    montant_dzd = None,
+                    montant_eur = None,
+                    montant_usd = None,
+                    accord = None
+                )
+                indemn_obj.save()
+            obj.save()
+            st = obj.status
+            subs_obj = obj
+            if old_st is not None and old_st != 'EN COURS D\'INDEMNISATION' and obj.status == 'EN COURS D\'INDEMNISATION':
+                typ = obj.file_type
+                try:
+                    maxid = BAG_SUIVI.objects.filter(file_type = typ).filter(date_claim__year=datetime.datetime.now().year).aggregate(Max('_id'))
+                    obj = BAG_SUIVI.objects.get(_id = maxid.get('_id__max'))
+                    maxid = re.search('(\d+)/', obj.n_file).group(1)
+                except (BAG_SUIVI.DoesNotExist, TypeError):
+                    maxid = '0'
+                obj.n_file = str(int(maxid) + 1) + '/' + str(datetime.datetime.now().year).replace('20', '')
+                indemn_obj, created = BAG_HIST_INDEMN.objects.create(
+                    suivi = obj,
+                    dte_prop = None,
+                    esc_dest = obj.escale_claim,
+                    monnaie = None,
+                    montant_dzd = None,
+                    montant_eur = None,
+                    montant_usd = None,
+                    accord = None
+                )
+                indemn_obj.save()
+            obj.save()
+            # print(dic_bag)
+            indemn_obj = BAG_HIST_INDEMN.objects.filter(suivi = obj).order_by('-_id').first()
+            if 'montant_dzd' in dic and indemn_obj.dte_prop is None:
+                indemn_obj.dte_prop = datetime.datetime.now().date()
+                indemn_obj.monnaie = dic['monnaie']
+                if indemn_obj.monnaie == 'USD':
+                    indemn_obj.montant_usd = float(dic['montant_dzd'])
+                    # MAKE EXCHANGE HERE ( IATA RATES )
+                else:
+                    indemn_obj.montant_dzd = float(dic['montant_dzd'])
+                indemn_obj.save()
+                _id = obj._id
+            else:
+                objs = BAG_DETAILS.objects.filter(suivi=request.POST.get('id'))
+                # print(dic_bag)
+                idx = 0
+                for item in objs:
+                    st_dic = dict()
+                    for key, value in dic_bag.items():
+                        if type(value) == list:
+                            st_dic[key] = value[idx]
+                        else:
+                            st_dic[key] = value
+                    obj, created = BAG_DETAILS.objects.update_or_create(
+                        _id = item._id,
+                        defaults = st_dic
+                    )
+                    idx += 1
+                    obj.save()
+                if st != 'CLOSED':
+                    qs = BAG_DETAILS.objects.filter(suivi=request.POST.get('id'), bag_status = False)
+                    found = True
+                    for bag in qs:
+                        if not bag.bag_found:
+                            found = False
+                            break
+                    if found:
+                        subs_obj.status = 'CLOSED'
+                        subs_obj.save()
+                flts = BAG_FLIGHTS.objects.filter(suivi=request.POST.get('id'))
+                idx = 0
+                for item in flts:
+                    st_dic = dict()
+                    vals = []
+                    for key, value in dic_flt.items():
+                        if type(value) == list:
+                            st_dic[key] = value[idx]
+                        else:
+                            st_dic[key] = value
+                    obj, created = BAG_FLIGHTS.objects.update_or_create(
+                        _id = item._id,
+                        defaults = st_dic
+                    )
+                    idx += 1
+                    obj.save()
+                _id = item.suivi._id
+            messages.success(request, 'Modificaton effectué avec succès !')
+            return redirect(reverse('core:bag-case-details', kwargs = {
+                'pk' : int(_id)
+            }))
+
+
+class BagCaseDetails(DetailView):
+    model = BAG_SUIVI
+    template_name = 'core/add-bag-case.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(BagCaseDetails, self).get_context_data(*args, **kwargs)
+        _id = self.kwargs['pk']
+        context['obj'] = BAG_SUIVI.objects.get(_id = self.get_object().pk)
+        context['type'] = context['obj'].file_type
+        context['rl_desc'] = BAG_RL.objects.get(code = context['obj'].rl.code).rl
+        context['title'] = 'Détails du : '.upper() + context['type']
+        context['id'] = _id
+        context['stats'] = list(status)
+        bags_obj = BAG_DETAILS.objects.filter(suivi=context['obj'])
+        context['bags'] = list(bags_obj)
+        flts_obj = BAG_FLIGHTS.objects.filter(suivi=context['obj'])
+        context['flts'] = list(flts_obj)
+        context['tag'] = 'x'
+        context['status'] = context['obj'].status
+        if context['type'] == 'OHD':
+            context['tag'] = BAG_DETAILS.objects.get(suivi=context['obj']).bag_n_tag
+        context['length'] = bags_obj.count()
+        context['escales'] = list(ESCALES.objects.all())
+        context['rl'] = list(BAG_RL.objects.all())
+        context['ind'] = BAG_HIST_INDEMN.objects.filter(suivi = context['obj']).order_by('-_id').first()
+        if context['ind'].monnaie is None:
+            context['amount'] = None
+        elif context['ind'].monnaie == 'DZD':
+            context['amount'] = context['ind'].montant_dzd
+        else:
+            context['amount'] = context['ind'].montant_usd
+        return context 
+
+class HistIndemn(ListView):
+    model = BAG_HIST_INDEMN
+    template_name = 'core/history-indemnisation.html'
+    paginate_by = 15
+
+    def get_queryset(self):
+        return BAG_HIST_INDEMN.objects.filter(suivi = self.kwargs['pk']).order_by('-_id')
+    
+    def get_context_data(self, *args, **kwargs):
+        context = super(HistIndemn, self).get_context_data(*args, **kwargs)
+        obj = BAG_SUIVI.objects.get(_id = self.kwargs['pk'])
+        context['title'] = 'Historique des propositions d\'indemnisation pour le dossier N° '.upper() + obj.n_file
+        return context
+
+@login_required
+def valid_case(request):
+    dic = dict(request.POST)
+    del dic['csrfmiddlewaretoken']
+    print(dic['file_type'][0].lower())
+    return redirect(reverse('core:luggage-view', kwargs = {
+            'opt' : dic['file_type'][0].lower()
+        }))
+
+
 

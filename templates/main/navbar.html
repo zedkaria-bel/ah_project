@@ -25,16 +25,16 @@
             <a class="nav-link" style="color: white !important;" href="{% url 'core:home-view' %}">Acceuil <span class="sr-only">(current)</span></a>
           </div>
         </li>
-        {% if request.user.profile.poste == 'CHEF D\'ESCALE' %}
+        <!-- {% if request.user.profile.dpt == 'DPT RECHERCHES ET INDEMNISATION DES BAGAGES' %}
         <li class="nav-item active ml-4">
           <div class="d-flex flex-row d-flex align-items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#d2d2d2" class="bi bi-bag-fill" viewBox="0 0 16 16">
               <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/>
             </svg>
-            <a class="nav-link" style="color: white !important;" href="{% url 'core:luggage-view' %}">Bagages <span class="sr-only">(current)</span></a>
+            <a class="nav-link" style="color: white !important;" href="{% url 'core:luggage-view' opt='ahl' %}">Bagages <span class="sr-only">(current)</span></a>
           </div>
         </li>
-        {% endif %}
+        {% endif %} -->
         {% if request.user.profile.dpt == 'DPT CONTRATS ET ASSISTANCE AU SOL' %}
         <li class="nav-item ml-4">
           <div class="d-flex flex-row d-flex align-items-center">
@@ -128,7 +128,7 @@
         <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
       </svg>
     </a>
-    <b class="col-auto font-weight-bold" style="color: white !important; font-weight: bolder; font-size: larger;">&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{title}}</b>
+    <b class="col-auto font-weight-bold" id="title" style="color: white !important; font-weight: bolder; font-size: larger;">&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{title}}</b>
   </div>
   
   <div class="collapse navbar-collapse flex-row-reverse" id="navbarSupportedContent">

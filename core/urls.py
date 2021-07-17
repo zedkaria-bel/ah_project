@@ -45,6 +45,10 @@ from .views import (
     HistOPCompany,
     luggage_view,
     add_ahl, add_dpr, add_ohd,
+    validBagCase,
+    BagCaseDetails,
+    valid_case,
+    HistIndemn,
 )
 
 app_name = 'core'
@@ -93,8 +97,12 @@ urlpatterns = [
     path('valid-fact-regular/', validFactRegular.as_view(), name = 'valid-fact-regular'),
     path('fact-regular-detail/<slug>/', FactRegularDetail.as_view(), name = 'fact-regular-detail'),
     path('compagnie-detail/<slug>/historic-operations-company/', HistOPCompany.as_view(), name = 'historic-operations-company'),
-    path('luggage-view/', luggage_view, name = 'luggage-view'),
+    path('luggage-summary/<str:opt>/', luggage_view.as_view(), name = 'luggage-view'),
     path('luggage-view/add-ahl/', add_ahl, name = 'add-ahl'),
     path('luggage-view/add-dpr/', add_dpr, name = 'add-dpr'),
     path('luggage-view/add-ohd/', add_ohd, name = 'add-ohd'),
+    path('bag-case/<pk>/', BagCaseDetails.as_view(), name = 'bag-case-details'),
+    path('valid-bag-case/', validBagCase.as_view(), name = 'valid-bag-case'),
+    path('valid-case/', valid_case, name = 'valid-case'),
+    path('bag-case/<pk>/historique-des-propositions/', HistIndemn.as_view(), name = 'historique-des-propositions'),
 ]

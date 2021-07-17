@@ -13,6 +13,19 @@ Détails
 
 {% block content %}
 
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+        <p class="mb-0 msg">{{ message }}</p>
+        <button type="button" class="close align-items-center mb-0" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <link
      rel="stylesheet"
      href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"
@@ -22,67 +35,56 @@ Détails
    <link rel="stylesheet" href="{% static 'core/country-picker-flags/build/css/countrySelect.css' %}">
     <script src="{% static 'core/country-picker-flags/build/js/countrySelect.js' %}"></script>
 
-<form method="POST" action="#" enctype="multipart/form-data" class="form">
+<form method="POST" action="{% url 'core:valid-bag-case' %}" enctype="multipart/form-data" class="form">
     {% csrf_token %}
     <!-- PASSAGER -->
-    {% if 'OHD' not in title %}
+    {% if 'AJOUT' in title %}
+    <input type="hidden" name='id' value="0">
+    {% else %}
+    <input type="hidden" name='id' value='{{id}}'>
+    {% endif %}
+    {% if tag is not None %}
     <div class="shadow p-3 mb-5 bg-white rounded w-100y">
-        <h3 style="font-weight: bolder !important;"><b>LE PASSAGER</b></h3>
+        <h3 style="font-weight: bolder !important;"><b>LE PASSAGER</b> {% if 'OHD' in title and 'AJOUT' not in title %} ( Uniquement si le TAG bagage est disponible ) {% endif %} </h3>
         <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LE PASSAGER EN QUESTION</b></h5>
         <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
         <div class="form-row">
             <div class="form-group col-sm-2">
                 <label for="pax_last_name" class="col-form-label">Nom</label>
                 {% if 'AJOUT' in title %}
-                <input type="text" id='pax_last_name' name="pax_last_name" class="form-control" placeholder="Nom" required>
+                <input type="text" id='pax_last_name' name="pax_last_name" class="form-control" placeholder="Nom" {% if 'OHD' not in title %} required {% endif %}>
                 {% else %}
-                <input type="text" id='pax_last_name' value="{{obj.pax_last_name}}" name="pax_last_name" class="form-control" placeholder="Nom" required readonly>
+                <input type="text" id='pax_last_name' {% if obj.pax_last_name is not None %} value="{{obj.pax_last_name}}" {% endif %} name="pax_last_name" class="form-control" placeholder="Nom" {% if obj.status == 'CLOSED' %} disabled {% endif %} {% if 'OHD' not in title %} required {% endif %} >
                 {% endif %}
             </div>
             <div class="form-group col-sm-2">
                 <label for="pax_first_name" class="col-form-label">Prénom</label>
                 {% if 'AJOUT' in title %}
-                <input type="text" id='pax_first_name' name="pax_first_name" class="form-control" placeholder="Prénom" required>
+                <input type="text" id='pax_first_name' name="pax_first_name" class="form-control" placeholder="Prénom" {% if 'OHD' not in title %} required {% endif %}>
                 {% else %}
-                <input type="text" id='pax_first_name' value="{{obj.pax_first_name}}" name="pax_first_name" class="form-control" placeholder="Prénom" required readonly>
+                <input type="text" id='pax_first_name' {% if obj.pax_first_name is not None %} value="{{obj.pax_first_name}}" {% endif %} name="pax_first_name" class="form-control" placeholder="Prénom" {% if obj.status == 'CLOSED' %} disabled {% endif %} {% if 'OHD' not in title %} required {% endif %} >
                 {% endif %}
             </div>
             <div class="form-group col-sm-1">
                 <label for="pax_age" class="col-form-label">Age</label>
                 {% if 'AJOUT' in title %}
-                <input type="number" min="0" id='pax_age' name="pax_age" class="form-control" placeholder="Age" required>
+                <input type="number" min="0" id='pax_age' name="pax_age" class="form-control" placeholder="Age" {% if 'OHD' not in title %} required {% endif %}>
                 {% else %}
-                <input type="number" min="0" id='pax_age' value="{{obj.pax_age}}" name="pax_age" class="form-control" placeholder="Age" required readonly>
+                <input type="number" min="0" id='pax_age' {% if obj.pax_age is not None %} value="{{obj.pax_age}}" {% endif %} name="pax_age" class="form-control" placeholder="Age" {% if obj.status == 'CLOSED' %} disabled {% endif %} {% if 'OHD' not in title %} required {% endif %} >
                 {% endif %}
             </div>
             <div class="form-group col-sm-1">
                 <label for="pax_age" class="col-form-label">Sexe</label>
                 {% if 'AJOUT' in title %}
-                <select class="custom-select" name="pax_gender" id="pax_gender" required>
-                    <option value="hm" selected>HOMME</option>
-                    <option value="fm">FEMME</option>
+                <select class="custom-select" name="pax_gender" id="pax_gender" {% if 'OHD' not in title %} required {% endif %}>
+                    <option value="HOMME" selected>HOMME</option>
+                    <option value="FEMME">FEMME</option>
                 </select>
                 {% else %}
-                <select class="custom-select" name="pax_gender" id="pax_gender" required>
+                <select class="custom-select" name="pax_gender" id="pax_gender" disabled {% if 'OHD' not in title %} required {% endif %}>
                     <option value="HOMME" {% if obj.pax_gender == 'HOMME' %} selected {% endif %}>HOMME</option>
                     <option value="FEMME" {% if obj.pax_gender == 'FEMME' %} selected {% endif %}>FEMME</option>
                 </select>
-                {% endif %}
-            </div>
-            <div class="form-group col-sm-6">
-                <label for="pax_adr_pax" class="col-form-label">Adresse</label>
-                {% if 'AJOUT' in title %}
-                <input type="text" id='pax_adr_pax' name="pax_adr_pax" class="form-control" placeholder="Adresse ..." required>
-                {% else %}
-                <input type="text" id='pax_adr_pax' value="{{obj.pax_adr_pax}}" name="pax_adr_pax" class="form-control" placeholder="Adresse ..." required readonly>
-                {% endif %}
-            </div>
-            <div class="form-group col-md-2">
-                <label for="pax_phone" class="col-form-label">Numéro de téléphone</label>
-                {% if 'AJOUT' in title %}
-                <input type="number" id='pax_phone' name="pax_phone" class="form-control" required>
-                {% else %}
-                <input type="tel" id='pax_phone' value="{{obj.pax_phone}}" name="pax_adr_pax" class="form-control" required readonly>
                 {% endif %}
             </div>
             <div class="form-group col-md-2">
@@ -90,63 +92,52 @@ Détails
                 {% if 'AJOUT' in title %}
                 <input type="email" id='pax_mail' name="pax_mail" class="form-control" placeholder="E-mail ..." >
                 {% else %}
-                <input type="email" id='pax_mail' value="{{obj.pax_mail}}" name="pax_mail" class="form-control" placeholder="E-mail ..." readonly>
+                <input type="email" id='pax_mail' {% if obj.pax_mail is not None %} value="{{obj.pax_mail}}" {% endif %} {% if obj.status == 'CLOSED' %} disabled {% endif %} name="pax_mail" class="form-control" placeholder="E-mail ..." >
                 {% endif %}
             </div>
             <div class="form-group col-md-2">
                 <label for="pax_zip_code" class="col-form-label">Code postal</label>
                 {% if 'AJOUT' in title %}
-                <input type="number" min="0" id='pax_zip_code' name="pax_zip_code" class="form-control" placeholder="Code postal" required>
+                <input type="number" min="0" id='pax_zip_code' name="pax_zip_code" class="form-control" placeholder="Code postal" {% if 'OHD' not in title %} required {% endif %}>
                 {% else %}
-                <input type="number" min="0" id='pax_zip_code' value="{{obj.pax_zip_code}}" name="pax_zip_code" class="form-control" placeholder="Code postal" required readonly>
+                <input type="number" min="0" id='pax_zip_code' {% if obj.pax_zip_code is not None %} value="{{obj.pax_zip_code}}" {% endif %} {% if obj.status == 'CLOSED' %} disabled {% endif %} name="pax_zip_code" class="form-control" placeholder="Code postal" {% if 'OHD' not in title %} required {% endif %} >
                 {% endif %}
             </div>
             <div class="form-group col-sm-2">
                 <label for="pax_country_res" class="col-form-label">Résidence</label>
                 {% if 'AJOUT' in title %}
-                <input type="text" id='pax_country_res' name="pax_country_res" class="form-control" placeholder="Pays" required>
+                <input type="text" id='pax_country_res' name="pax_country_res" class="form-control" placeholder="Pays" {% if 'OHD' not in title %} required {% endif %}>
                 {% else %}
-                <input type="text" id='pax_country_res' value="{{obj.pax_country_res}}" name="pax_country_res" class="form-control" placeholder="Pays" required readonly>
+                <input type="text" id='pax_country_res' {% if obj.pax_country_res is not None %} value="{{obj.pax_country_res}}" {% endif %} {% if obj.status == 'CLOSED' %} disabled {% endif %} name="pax_country_res" class="form-control" placeholder="Pays" {% if 'OHD' not in title %} required {% endif %} >
                 {% endif %}
             </div>
-            <div class="form-group col-md-2">
+            <!-- <div class="form-group col-md-2">
                 <label for="pax_reg" class="col-form-label">Région</label>
                 {% if 'AJOUT' in title %}
-                <input type="text" min="0" id='pax_reg' name="pax_reg" class="form-control" placeholder="Région" required>
+                <input type="text" min="0" id='pax_reg' name="pax_reg" class="form-control" placeholder="Région" {% if 'OHD' not in title %} required {% endif %}>
                 {% else %}
-                <input type="text" min="0" id='pax_reg' value="{{obj.pax_reg}}" name="pax_reg" class="form-control" placeholder="Région" required readonly>
+                <input type="text" min="0" id='pax_reg' {% if obj.pax_reg is not None %} value="{{obj.pax_reg}}" {% endif %} name="pax_reg" class="form-control" placeholder="Région" {% if 'OHD' not in title %} required {% endif %} >
                 {% endif %}
-            </div>
+            </div> -->
             <div class="form-group col-md-2">
                 <label for="carte_fid" class="col-form-label">Carte fidélité ( Optionnel )</label>
                 {% if 'AJOUT' in title %}
-                <input type="text" maxlength="10" id='carte_fid' name="carte_fid" class="form-control" placeholder="AHXXXXXXXX" required>
+                <input type="text" maxlength="10" id='carte_fid' name="carte_fid" class="form-control" placeholder="AHXXXXXXXX">
                 {% else %}
-                <input type="text" maxlength="10" id='carte_fid' value="{{obj.carte_fid}}" name="carte_fid" class="form-control" placeholder="AHXXXXXXXX" required readonly>
+                <input type="text" maxlength="10" id='carte_fid' {% if obj.carte_fid is not None %} value="{{obj.carte_fid}}" {% endif %} {% if obj.status == 'CLOSED' %} disabled {% endif %} name="carte_fid" class="form-control" placeholder="AHXXXXXXXX" >
                 {% endif %}
             </div>
-            {% if 'OHD' not in title %}
-            <div class="form-group col-sm-2">
-                <label for="pax_country_res" class="col-form-label">Livraison</label>
-                {% if 'AJOUT' in title %}
-                <select class="custom-select" name="deliv" id="deliv" required>
-                    <option value="himself" selected>LE PASSAGER LUI MÊME</option>
-                    <option value="other">AUTRUI</option>
-                </select>
-                {% endif %}
-            </div>
-            {% endif %}
         </div>
         <div class="deliv_infos">
-            <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LIVRAISON</b></h5>
+            <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LIVRAISON (RÉCUPERATION)</b></h5>
             <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
             <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label for="pax_delivery_adr" class="col-form-label">Adresse de livraison</label>
+                <div class="form-group col-sm-5">
+                    <label for="pax_adr_pax_1" class="col-form-label">Adresse temporaire</label>
                     {% if 'AJOUT' in title %}
-                    <input type="text" id='pax_delivery_adr' name="pax_delivery_adr" placeholder="Adresse" class="form-control" >
+                    <input type="text" id='pax_adr_pax_1' name="pax_adr_pax_1" class="form-control" placeholder="Adresse ...">
                     {% else %}
-                    <input type="text" id='pax_delivery_adr' value="{{obj.pax_delivery_adr}}" name="pax_delivery_adr" placeholder="Adresse" class="form-control" readonly>
+                    <input type="text" id='pax_adr_pax_1' {% if obj.pax_adr_pax_1 is not None %} value="{{obj.pax_adr_pax_1}}" {% endif %} name="pax_adr_pax_1" class="form-control" {% if obj.status == 'CLOSED' %} disabled {% endif %} placeholder="Adresse ..." >
                     {% endif %}
                 </div>
                 <div class="form-group col-md-2">
@@ -154,12 +145,44 @@ Détails
                     {% if 'AJOUT' in title %}
                     <input type="date" id='pax_stay_until' name="pax_stay_until" placeholder="Date" class="form-control">
                     {% else %}
-                    <input type="date" id='pax_stay_until' value="{{obj.pax_stay_until}}" name="pax_stay_until" class="form-control" readonly>
+                    <input type="date" id='pax_stay_until' {% if obj.pax_stay_until|date:'Y-m-d' is not None %} value="{{obj.pax_stay_until|date:'Y-m-d'}}" {% endif %} name="pax_stay_until" {% if obj.status == 'CLOSED' %} disabled {% endif %} class="form-control" >
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-5">
+                    <label for="pax_adr_pax_2" class="col-form-label">Adresse permanente</label>
+                    {% if 'AJOUT' in title %}
+                    <input type="text" id='pax_adr_pax_2' name="pax_adr_pax_2" class="form-control" placeholder="Adresse ...">
+                    {% else %}
+                    <input type="text" id='pax_adr_pax_2' {% if obj.pax_adr_pax_2 is not None %} value="{{obj.pax_adr_pax_2}}" {% endif %} {% if obj.status == 'CLOSED' %} disabled {% endif %} name="pax_adr_pax_2" class="form-control" placeholder="Adresse ..." >
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="pax_phone_1" class="col-form-label">Numéro de téléphone 1</label>
+                    {% if 'AJOUT' in title %}
+                    <input type="number" id='pax_phone_1' name="pax_phone_1" class="form-control" placeholder="Numéro ..." >
+                    {% else %}
+                    <input type="number" id='pax_phone_1' {% if obj.pax_phone_1 is not None %} value="{{obj.pax_phone_1}}" {% endif %} placeholder="Numéro ..." {% if obj.status == 'CLOSED' %} disabled {% endif %} name="pax_phone_1" class="form-control" >
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="pax_phone_2" class="col-form-label">Numéro de téléphone 2</label>
+                    {% if 'AJOUT' in title %}
+                    <input type="number" id='pax_phone_2' name="pax_phone_2" placeholder="Numéro ..." class="form-control" >
+                    {% else %}
+                    <input type="number" id='pax_phone_2' {% if obj.pax_phone_2 is not None %} value="{{obj.pax_phone_2}}" {% endif %} placeholder="Numéro ..." {% if obj.status == 'CLOSED' %} disabled {% endif %} name="pax_phone_2" class="form-control" >
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="pax_phone_3" class="col-form-label">Numéro de téléphone 3</label>
+                    {% if 'AJOUT' in title %}
+                    <input type="number" id='pax_phone_3' name="pax_phone_3" class="form-control" placeholder="Numéro ..." >
+                    {% else %}
+                    <input type="number" id='pax_phone_3' {% if obj.pax_phone_3 is not None %} value="{{obj.pax_phone_3}}" {% endif %} placeholder="Numéro ..." {% if obj.status == 'CLOSED' %} disabled {% endif %} name="pax_phone_3" class="form-control" >
                     {% endif %}
                 </div>
             </div>
         </div>
-        <div class="other_prs" style="display: none !important;">
+        <!-- <div class="other_prs" {% if 'AJOUT' in title or obj.other_delivery_phone is None and obj.other_delivery_mail is None and obj.other_delivery_adr is None %} style="display: none !important;" {% endif %}   >
             <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LA PERSONNE EN CHARGE DE RECEPTION</b></h5>
             <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
             <div class="form-row">
@@ -168,15 +191,15 @@ Détails
                     {% if 'AJOUT' in title %}
                     <input type="number" id='other_delivery_phone' name="other_delivery_phone" class="form-control" >
                     {% else %}
-                    <input type="number" id='other_delivery_phone' value="{{obj.other_delivery_phone}}" name="other_delivery_phone" class="form-control" readonly>
+                    <input type="number" id='other_delivery_phone' {% if obj.other_delivery_phone is not None %} value="{{obj.other_delivery_phone}}" {% endif %} name="other_delivery_phone" class="form-control" >
                     {% endif %}
                 </div>
                 <div class="form-group col-md-2">
                     <label for="other_delivery_mail" class="col-form-label">E-mail</label>
                     {% if 'AJOUT' in title %}
-                    <input type="email" id='other_delivery_mail' name="pax_delivery_mail" placeholder="Email" class="form-control">
+                    <input type="email" id='other_delivery_mail' name="other_delivery_mail" placeholder="Email" class="form-control">
                     {% else %}
-                    <input type="email" id='other_delivery_mail' value="{{obj.other_delivery_mail}}" name="other_delivery_mail" class="form-control" readonly>
+                    <input type="email" id='other_delivery_mail' {% if obj.other_delivery_mail is not None %} value="{{obj.other_delivery_mail}}" {% endif %} name="other_delivery_mail" class="form-control" >
                     {% endif %}
                 </div>
                 <div class="form-group col-md-4">
@@ -184,67 +207,39 @@ Détails
                     {% if 'AJOUT' in title %}
                     <input type="text" id='other_delivery_adr' name="other_delivery_adr" placeholder="Adresse" class="form-control" >
                     {% else %}
-                    <input type="text" id='other_delivery_adr' value="{{obj.other_delivery_adr}}" name="other_delivery_adr" class="form-control"  readonly>
+                    <input type="text" id='other_delivery_adr' {% if obj.other_delivery_adr is not None %} value="{{obj.other_delivery_adr}}" {% endif %} name="other_delivery_adr" class="form-control"  >
                     {% endif %}
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
     {% endif %}
     <!-- RECLAMATION -->
     <div class="shadow p-3 mb-5 bg-white rounded w-100y">
-        <h3 style="font-weight: bolder !important;"><b>LA RÉCLAMATION</b></h3>
-        <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>DOSSIER ET VOL</b></h5>
+        <h3 style="font-weight: bolder !important;"><b>LA DÉCLARATION</b></h3>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>DOSSIER</b></h5>
         <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
         <div class="form-row">
-            <div class="form-group col-sm-2">
+            <div class="form-group col-sm-1">
                 <label for="file_type" class="col-form-label">Type du dossier</label>
-                {% if 'AJOUT' in title %}
-                <select class="custom-select" name="file_type" id="file_type" required disabled>
-                    <option value="ahl" {% if 'AHL' in title %} selected {% endif %} >AHL</option>
-                    <option value="dpr" {% if 'DPR' in title %} selected {% endif %} >DPR</option>
-                    <option value="ohd" {% if 'OHD' in title %} selected {% endif %} >OHD</option>
+                <select class="custom-select" id="file_type" name="file_type" disabled>
+                    {% if type == 'AHL' %}
+                    <option value="AHL" selected>AHL</option>
+                    {% endif %}
+                    {% if type == 'DPR' %}
+                    <option value="DPR" selected>DPR</option>
+                    {% endif %}
+                    {% if type == 'OHD' %}
+                    <option value="OHD" selected>OHD</option>
+                    {% endif %}
                 </select>
-                {% endif %}
             </div>
-            <div class="form-group col-sm-2">
+            <div class="form-group col-sm-1">
                 <label for="ref" class="col-form-label">Référence</label>
                 {% if 'AJOUT' in title %}
-                <input type="number" pattern="/^-?\d+\.?\d*$/" onKeyPress="if(this.value.length==5) return false;" id='ref' name="ref" class="form-control" placeholder="Référence" required>
+                <input type="number" pattern="/^-?\d+\.?\d*$/" onKeyPress="if(this.value.length==8) return false;" id='ref' name="ref" class="form-control" placeholder="Référence" required>
                 {% else %}
-                <input type="number" pattern="/^-?\d+\.?\d*$/" onKeyPress="if(this.value.length==5) return false;" id='ref' value="{{obj.ref}}" name="ref" class="form-control" placeholder="Référence" required readonly>
-                {% endif %}
-            </div>
-            <div class="form-group col-sm-2">
-                <label for="flt" class="col-form-label">N° Vol</label>
-                {% if 'AJOUT' in title %}
-                <input type="text" id='flt' name="flt" class="form-control" placeholder="N° Vol" required>
-                {% else %}
-                <input type="text" id='flt' value="{{obj.flt}}" name="flt" class="form-control" placeholder="N° Vol" required readonly>
-                {% endif %}
-            </div>
-            <div class="form-group col-sm-2">
-                <label for="dte_flt" class="col-form-label">Date du Vol</label>
-                {% if 'AJOUT' in title %}
-                <input type="date" id='dte_flt' name="dte_flt" class="form-control" placeholder="Date" required>
-                {% else %}
-                <input type="text" id='dte_flt' value="{{obj.dte_flt|date:'d-m-Y'}}" name="dte_flt" class="form-control" placeholder="N° Vol" required readonly>
-                {% endif %}
-            </div>
-            <div class="form-group col-sm-2">
-                <label for="fs" class="col-form-label">Fault Station</label>
-                {% if 'AJOUT' in title %}
-                <input type="text" id='fs' name="fs" class="form-control" placeholder="Station" required>
-                {% else %}
-                <input type="text" id='fs' value="{{obj.fs}}" name="fs" class="form-control" placeholder="N° Vol" required readonly>
-                {% endif %}
-            </div>
-            <div class="form-group col-sm-2">
-                <label for="ft" class="col-form-label">Fault Terminal</label>
-                {% if 'AJOUT' in title %}
-                <input type="text" id='ft' name="ft" class="form-control" placeholder="Station" required>
-                {% else %}
-                <input type="text" id='ft' value="{{obj.ft}}" name="ft" class="form-control" placeholder="N° Vol" required readonly>
+                <input type="number" pattern="/^-?\d+\.?\d*$/" onKeyPress="if(this.value.length==8) return false;" id='ref' {% if obj.ref is not None %} value="{{obj.ref}}" {% endif %} name="ref" class="form-control" placeholder="Référence" readonly required >
                 {% endif %}
             </div>
             <div class="form-group col-sm-4">
@@ -256,69 +251,104 @@ Détails
                     {% endfor %}
                 </select>
                 {% else %}
-                <input type="text" id='ft' value="{{obj.ft}}" name="ft" class="form-control" placeholder="N° Vol" required readonly>
-                {% endif %}
-            </div>
-            <div class="form-group col-sm-2">
-                <label for="prov" class="col-form-label">Provenance</label>
-                {% if 'AJOUT' in title %}
-                <input type="text" id='prov' name="prov" class="form-control" placeholder="Provenance" required>
-                {% else %}
-                <input type="text" id='prov' value="{{obj.prov}}" name="prov" class="form-control" placeholder="Provenance" required readonly>
-                {% endif %}
-            </div>
-            <div class="form-group col-sm-2">
-                <label for="dest" class="col-form-label">Destination</label>
-                {% if 'AJOUT' in title %}
-                <input type="text" id='dest' name="dest" class="form-control" placeholder="Destination" required>
-                {% else %}
-                <input type="text" id='dest' value="{{obj.dest}}" name="dest" class="form-control" placeholder="Destination" required readonly>
-                {% endif %}
-            </div>
-            {% if 'AJOUT' not in title %}
-            <div class="form-group col-sm-2">
-                <label for="search_status" class="col-form-label">Recherche</label>
-                <select class="custom-select" name="search_status" id="search_status" required>
-                    <option value="PRIMAIRE" {% if obj.search_status == 'PRIMAIRE' %} selected {% endif %} >PRIMAIRE</option>
-                    <option value="SECONDAIRE" {% if obj.search_status == 'SECONDAIRE' %} selected {% endif %} >SECONDAIRE</option>
+                <select class="custom-select" name="rl" id="rl" {% if obj.status == 'CLOSED' %} disabled {% endif %} required>
+                    {% for item in rl %}
+                    <option value="{{item.code}}" {% if item.code == obj.rl.code %} selected {% endif %} > {{item.code}} - {{item.rl}} </option>
+                    {% endfor %}
                 </select>
+                {% endif %}
             </div>
+            {% if 'AJOUT' not in title and obj.status is not None %}
             <div class="form-group col-sm-2">
                 <label for="status" class="col-form-label">Status</label>
-                <select class="custom-select" name="status" id="status" required>
-                    {% for st in status %}
+                <select class="custom-select" name="status" id="status" {% if obj.status == 'CLOSED' %} disabled {% endif %} required>
+                    {% for st in stats %}
                     <option value="{{st.1}}" {% if obj.status == st.1 %} selected {% endif %} >{{st.1}}</option>
                     {% endfor %}
                 </select>
             </div>
             {% endif %}
+            {% if 'OHD' not in title and obj.status == 'EN COURS D\'INDEMNISATION' %}
             <div class="form-group col-sm-2">
                 <label for="n_file" class="col-form-label">N° Dossier</label>
                 {% if 'AJOUT' in title %}
-                <input type="text" id='n_file' name="n_file" value="{{n_file}}" class="form-control" placeholder="N° dossier" required readonly>
+                <input type="text" id='n_file' name="n_file" value="{{n_file}}" class="form-control" placeholder="N° dossier" required >
                 {% else %}
-                <input type="text" id='n_file' value="{{obj.n_file}}" name="n_file" class="form-control" placeholder="N° dossier" required readonly>
+                <input type="text" id='n_file' {% if obj.n_file is not None %} value="{{obj.n_file}}" {% endif %} name="n_file" class="form-control" placeholder="N° dossier" required >
                 {% endif %}
             </div>
+            {% endif %}
+            <div class="form-group col-2">
+                <label for="etkt" class="col-form-label">ETKT</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" maxlength="14" id='etkt' name="etkt" value="{{etkt}}" class="form-control" placeholder="ETKT" {% if 'OHD' not in title %} required {% endif %} >
+                {% else %}
+                <input type="text" maxlength="14" id='etkt' {% if obj.etkt is not None %} value="{{obj.etkt}}" {% endif %} name="etkt" class="form-control" placeholder="ETKT" {% if obj.status == 'CLOSED' %} disabled {% endif %} required >
+                {% endif %}
+            </div>
+            <div class="form-group col-4">
+                <label for="dte_send_bcr" class="col-form-label">Date d'envoie du dossier depuis les litiges bagages</label>
+                {% if 'AJOUT' in title %}
+                <input type="datetime-local" id='dte_send_bcr' name="dte_send_bcr" value="{{dte_send_bcr}}" class="form-control" required>
+                {% else %}
+                <input type="datetime-local" id='dte_send_bcr' value="{{obj.dte_send_bcr|date:'Y-m-d'}}T{{obj.dte_send_bcr|time:'H:i'}}" name="dte_send_bcr" class="form-control" {% if obj.status == 'CLOSED' %} disabled {% endif %} required >
+                {% endif %}
+            </div>
+            <div class="form-group col-2">
+                <label for="escale_claim" class="col-form-label">Escale</label>
+                {% if 'AJOUT' in title %}
+                <select class="custom-select" name="escale_claim" id="escale_claim" required>
+                    {% for item in escales %}
+                    <option value="{{item.escale}}"> {{item.escale}} - {{item.full_name}} </option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <select class="custom-select" name="escale_claim" id="escale_claim" {% if obj.status == 'CLOSED' %} disabled {% endif %} required>
+                    {% for item in escales %}
+                    <option value="{{item.escale}}"> {{item.escale}} - {{item.full_name}}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+            <div class="form-group col-2">
+                <label for="date_claim" class="col-form-label">Date de la déclaration</label>
+                {% if 'AJOUT' in title %}
+                <input type="date" id='date_claim' name="date_claim" value="{{date_claim}}" class="form-control" required>
+                {% else %}
+                <input type="date" id='date_claim' {% if obj.date_claim is not None %} value="{{obj.date_claim|date:'Y-m-d'}}" {% endif %} name="date_claim" class="form-control" {% if obj.status == 'CLOSED' %} disabled {% endif %} required >
+                {% endif %}
+            </div>
+            {% if 'OHD' not in title %}
+            <div class="form-group col-1">
+                <label for="n_bag_received" class="col-form-label">Bagages reçus</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" value="0" id='n_bag_received' name="n_bag_received" value="{{n_bag_received}}" class="form-control nbag" placeholder="Nombre" required>
+                {% else %}
+                <input type="number" min="0" id='n_bag_received' value="{{obj.n_bag_received}}" name="n_bag_received" class="form-control nbag" placeholder="Nombre" {% if obj.status == 'CLOSED' %} disabled {% endif %} required >
+                {% endif %}
+            </div>
+            <div class="form-group col-3">
+                <label for="n_bag_miss_dmg" class="col-form-label">Bagages manquants / endommagés</label>
+                {% if 'AJOUT' in title %}
+                <input type="number" min="0" value="0" id='n_bag_miss_dmg' name="n_bag_miss_dmg" value="{{n_bag_miss_dmg}}" class="form-control nbag" placeholder="Nombre" required>
+                {% else %}
+                <input type="number" min="0" id='n_bag_miss_dmg' value="{{obj.n_bag_miss_dmg}}" name="n_bag_miss_dmg" class="form-control nbag" placeholder="Nombre" {% if obj.status == 'CLOSED' %} disabled {% endif %} required >
+                {% endif %}
+            </div>
+            <div class="form-group col-4">
+                <label for="n_recu_payment_exc_bag" class="col-form-label">N° Référence du reçu de paiement d'excédent de bagages ( Optionnel )</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='n_recu_payment_exc_bag' name="n_recu_payment_exc_bag" value="{{n_recu_payment_exc_bag}}" class="form-control" placeholder="N° Référence">
+                {% else %}
+                <input type="text" id='n_recu_payment_exc_bag' {% if request.n_recu_payment_exc_bag %} value="{{obj.n_recu_payment_exc_bag}}" {% endif %} name="n_recu_payment_exc_bag" class="form-control" placeholder="N° Référence" {% if obj.status == 'CLOSED' %} disabled {% endif %} >
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
-        {% if request.user.profile.dpt == 'DPT RECHERCHES ET INDEMNISATION DES BAGAGES' %}
-        <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>STATUS DU DOSSIER</b></h5>
+        {% if 'OHD' not in title %}
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>CONFORMITÉ DU DOSSIER</b></h5>
         <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
         <div class="form-row">
-            <div class="form-group col-sm-3">
-                <label for="file_complet" class="col-form-label">Dossier complet ?</label>
-                {% if 'AJOUT' in title %}
-                <select class="custom-select" name="file_complet" id="file_complet" required>
-                    <option value="oui">OUI</option>
-                    <option value="non" selected>NON</option>
-                </select>
-                {% else %}
-                <select class="custom-select" name="file_complet" id="file_complet" required>
-                    <option value="oui" {% if obj.file_complet %} selected {% endif %} >OUI</option>
-                    <option value="non" {% if not obj.file_complet %} selected {% endif %} >NON</option>
-                </select>
-                {% endif %}
-            </div>
             <div class="form-group col-sm-3">
                 <label for="file_conforme" class="col-form-label">Dossier conforme ?</label>
                 {% if 'AJOUT' in title %}
@@ -327,26 +357,303 @@ Détails
                     <option value="non" selected>NON</option>
                 </select>
                 {% else %}
-                <select class="custom-select" name="file_conforme" id="file_conforme" required>
+                <select class="custom-select" name="file_conforme" id="file_conforme" {% if obj.status == 'CLOSED' %} disabled {% endif %} required>
                     <option value="oui" {% if obj.file_conforme %} selected {% endif %} >OUI</option>
                     <option value="non" {% if not obj.file_conforme %} selected {% endif %} >NON</option>
                 </select>
                 {% endif %}
             </div>
+            <div class="form-group col-sm-6">
+                <label for="file_conforme" class="col-form-label">Dossier non conforme ? Indiquez la raison</label>
+                {% if 'AJOUT' in title %}
+                <input type="text" id='conf_reason' name="conf_reason" class="form-control" placeholder="Remarques ..." >
+                {% else %}
+                <input type="text" id='conf_reason' name="conf_reason" {% if obj.conf_reason %} value="{{obj.conf_reason}}" {% endif %} {% if obj.status == 'CLOSED' %} disabled {% endif %} class="form-control" placeholder="Remarques ..." >
+                {% endif %}
+            </div>
         </div>
         {% endif %}
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LE(S) VOL(S)</b></h5>
+        <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+        <div class="flt_card row">
+            <div class="d-flex justify-content-start row">
+                {% if 'AJOUT' not in title %}
+                {% for obj in flts %}
+                <p class="col-2 text-center align-self-center h5">Tronçon N° {{forloop.counter}} </p>
+                <div class="col-sm-10 row">
+                    <div class="form-group col-sm-1">
+                        <label for="prov" class="col-form-label">Provenance</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='prov' name="prov" class="form-control" placeholder="Prov." {% if 'OHD' not in title %} required {% endif %}>
+                        {% else %}
+                        <input type="text" id='prov' {% if obj.prov is not None %} value="{{obj.prov}}" {% endif %} name="prov" {% if status == 'CLOSED' %} disabled {% endif %} class="form-control" placeholder="Prov." {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label for="dest" class="col-form-label">Destination</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='dest' name="dest" class="form-control" placeholder="Dest." {% if 'OHD' not in title %} required {% endif %}>
+                        {% else %}
+                        <input type="text" id='dest' {% if obj.dest is not None %} value="{{obj.dest}}" {% endif %} name="dest" {% if status == 'CLOSED' %} disabled {% endif %} class="form-control" placeholder="Dest." {% if obj.status == 'CLOSED' %} disabled {% endif %} {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-2">
+                        <label for="flt" class="col-form-label">N° Vol</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='flt' name="flt" class="form-control" placeholder="N° Vol" required>
+                        {% else %}
+                        <input type="text" id='flt' {% if obj.flt is not None %} value="{{obj.flt}}" {% endif %} {% if status == 'CLOSED' %} disabled {% endif %} name="flt" class="form-control" placeholder="N° Vol" {% if obj.status == 'CLOSED' %} disabled {% endif %} {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label for="company" class="col-form-label">Compagnie</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='company' name="company" class="form-control" placeholder="Compagnie" {% if 'OHD' not in title %} required {% endif %}>
+                        {% else %}
+                        <input type="text" id='company' {% if obj.company is not None %} value="{{obj.company}}" {% endif %} {% if status == 'CLOSED' %} disabled {% endif %} name="company" class="form-control" placeholder="Compagnie" {% if obj.status == 'CLOSED' %} disabled {% endif %} {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-2">
+                        <label for="dte_flt" class="col-form-label">Date du Vol</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="date" id='dte_flt' name="dte_flt" class="form-control" placeholder="Date" {% if 'OHD' not in title %} required {% endif %}>
+                        {% else %}
+                        <input type="date" id='dte_flt' {% if obj.dte_flt is not None %} value="{{obj.dte_flt}}" {% endif %} name="dte_flt" {% if status == 'CLOSED' %} disabled {% endif %} class="form-control" placeholder="Date" {% if obj.status == 'CLOSED' %} disabled {% endif %} {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    {% if 'OHD' not in title %}
+                    <div class="form-group col-sm-2">
+                        <label for="fs" class="col-form-label">Fault Station</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='fs' name="fs" class="form-control" placeholder="Station">
+                        {% else %}
+                        <input type="text" id='fs' {% if obj.fs is not None %} value="{{obj.fs}}" {% endif %} name="fs" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="N° Vol" >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-2">
+                        <label for="ft" class="col-form-label">Fault Terminal</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='ft' name="ft" class="form-control" placeholder="Station">
+                        {% else %}
+                        <input type="text" id='ft' {% if obj.ft is not None %} value="{{obj.ft}}" {% endif %} name="ft" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="N° Vol" >
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <p class="close ml-auto mt-4 col-sm-auto" style="color: black; cursor: pointer; transform: rotate(45deg); font-weight: lighter; font-size:4em; display: none;">+</p>
+                    <div class="form-group col-sm-12">
+                        <label for="flt_obs" class="col-form-label">Observations</label>
+                        {% if 'AJOUT' in title %}
+                        <textarea type="text" id='flt_obs' cols="30" rows="3" name="flt_obs" class="form-control" placeholder="Remarques ..."></textarea>
+                        {% else %}
+                        <textarea type="text" id='flt_obs' cols="30" rows="3" name="flt_obs" class="form-control" placeholder="Remarques ..." {% if status == 'CLOSED' %} disabled {% endif %} >{% if obj.flt_obs is not None %}{{obj.flt_obs}}{% endif %}</textarea>
+                        {% endif %}
+                    </div>
+                </div>
+                <hr class="mt-3 divid" style="color: black !important; height: 2px !important;">
+                {% endfor %}
+                {% else %}
+                <input type="hidden" id="hid_flt" class="hid_flt" name="n_flt" value="1">
+                <p class="col-2 text-center align-self-center h5">Tronçon N° <span class="n_flt">1</span> </p>
+                <div class="col-sm-10 row">
+                    <div class="form-group col-sm-1">
+                        <label for="prov" class="col-form-label">Provenance</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='prov' name="prov" class="form-control" placeholder="Prov." {% if 'OHD' not in title %} required {% endif %}>
+                        {% else %}
+                        <input type="text" id='prov' {% if obj.prov is not None %} value="{{obj.prov}}" {% endif %} name="prov" class="form-control" placeholder="Prov." {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label for="dest" class="col-form-label">Destination</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='dest' name="dest" class="form-control" placeholder="Dest." {% if 'OHD' not in title %} required {% endif %}>
+                        {% else %}
+                        <input type="text" id='dest' {% if obj.dest is not None %} value="{{obj.dest}}" {% endif %} name="dest" class="form-control" placeholder="Dest." {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-2">
+                        <label for="flt" class="col-form-label">N° Vol</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='flt' name="flt" class="form-control" placeholder="N° Vol" required>
+                        {% else %}
+                        <input type="text" id='flt' {% if obj.flt is not None %} value="{{obj.flt}}" {% endif %} name="flt" class="form-control" placeholder="N° Vol" {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label for="company" class="col-form-label">Compagnie</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='company' name="company" class="form-control" placeholder="Compagnie" {% if 'OHD' not in title %} required {% endif %}>
+                        {% else %}
+                        <input type="text" id='flt' {% if obj.flt is not None %} value="{{obj.flt}}" {% endif %} name="flt" class="form-control" placeholder="Compagnie" {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-2">
+                        <label for="dte_flt" class="col-form-label">Date du Vol</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="date" id='dte_flt' name="dte_flt" class="form-control" placeholder="Date" {% if 'OHD' not in title %} required {% endif %}>
+                        {% else %}
+                        <input type="date" id='dte_flt' {% if obj.dte_flt is not None %} value="{{obj.dte_flt}}" {% endif %} name="dte_flt" class="form-control" placeholder="Date" {% if 'OHD' not in title %} required {% endif %} >
+                        {% endif %}
+                    </div>
+                    {% if 'OHD' not in title %}
+                    <div class="form-group col-sm-2">
+                        <label for="fs" class="col-form-label">Fault Station</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='fs' name="fs" class="form-control" placeholder="Station">
+                        {% else %}
+                        <input type="text" id='fs' {% if obj.fs is not None %} value="{{obj.fs}}" {% endif %} name="fs" class="form-control" placeholder="N° Vol" required >
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-sm-2">
+                        <label for="ft" class="col-form-label">Fault Terminal</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='ft' name="ft" class="form-control" placeholder="Station">
+                        {% else %}
+                        <input type="text" id='ft' {% if obj.ft is not None %} value="{{obj.ft}}" {% endif %} name="ft" class="form-control" placeholder="N° Vol" required >
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <p class="close ml-auto mt-4 col-sm-auto" style="color: black; cursor: pointer; transform: rotate(45deg); font-weight: lighter; font-size:4em; display: none;">+</p>
+                    <div class="form-group col-sm-12">
+                        <label for="flt_obs" class="col-form-label">Observations</label>
+                        {% if 'AJOUT' in title %}
+                        <textarea type="text" id='flt_obs' cols="30" rows="3" name="flt_obs" class="form-control" placeholder="Remarques ..."></textarea>
+                        {% else %}
+                        <textarea type="text" id='flt_obs' cols="30" rows="3" {% if obj.flt_obs is not None %} value="{{obj.flt_obs}}" {% endif %} name="flt_obs" class="form-control" placeholder="Remarques ..." ></textarea>
+                        {% endif %}
+                    </div>
+                </div>
+                <hr class="mt-3 divid" style="color: black !important; height: 2px !important;">
+                {% if 'AJOUT' in title %}
+                <div class="d-flex flex-row ml-auto add_flt col-sm-auto" style="cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" fill="currentColor" class="bi bi-plus-circle-fill" viewBox="0 0 16 16">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z"/>
+                        </svg>
+                    <p class="mb-0 ml-3 h4 align-self-center" style="background-color: white !important;">Ajouter un trançon</p>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
         <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>LE(S) BAGAGE(S)</b></h5>
         <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
         <div class="bag_card row">
             <div class="d-flex justify-content-start row">
+                {% if 'AJOUT' not in title %}
+                {% for bag in bags %}
+                <div class="col-2 align-self-center d-flex flex-column">
+                    <p class="text-center h3">Bagage N° {{forloop.counter}} </p>
+                    {% if 'AHL' in title and not bag.bag_status %}
+                    {% if bag.bag_found %}
+                    <div class="py-4 mx-0 d-flex flex-column mt-5 align-items-center justify-content-center rounded" style="border-radius: 45%; background-color: #d6ffca;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#259f44" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                        </svg>
+                        <p class="h3 mt-4" style="color: #259f44;">Localisé</p>
+                    </div>
+                    {% else %}
+                    <div class="py-4 mx-0 d-flex flex-column mt-5 align-items-center justify-content-center rounded" style="border-radius: 45%; background-color: #ffe0e0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#dc2323" class="bi bi-x-lg" viewBox="0 0 16 16">
+                            <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                          </svg>
+                        <p class="h3 mt-4" style="color: #dc2323;">Non localisé</p>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                <div class="col-sm-10 row">
+                    {% if 'OHD' not in title %}
+                    <div class="form-group col-11">
+                        <label for="bag_status" class="col-form-label">Type du bagage</label>
+                        <select class="custom-select" name="bag_status" class="bag_status" disabled required>
+                            <option value="oui" {% if bag.bag_status %} selected {% endif %} >BAGAGE REÇU</option>
+                            <option value="non" {% if not bag.bag_status %} selected {% endif %}>BAGAGE MANQUANT / ENDOMMAGÉ</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="form-group col-sm-2">
+                        <label for="bag_weight" class="col-form-label">Poids - KG</label>
+                        <input type="number" min="0" step="0.01" id='bag_weight' {% if bag.bag_weight is not None %} value="{{bag.bag_weight}}" {% endif %} name="bag_weight" class="form-control" placeholder="Kg ..." {% if status == 'CLOSED' %} disabled {% endif %} required >
+                    </div>
+                    <div class="form-group col-sm-2">
+                        <label for="bag_brand" class="col-form-label">Marque</label>
+                        <input type="text" id='bag_brand' {% if bag.bag_brand is not None %} value="{{bag.bag_brand}}" {% endif %} name="bag_brand" class="form-control" placeholder="Marque" {% if status == 'CLOSED' %} disabled {% endif %} required >
+                    </div>
+                    <div class="form-group col-sm-2">
+                        <label for="bag_n_tag" class="col-form-label">Tag</label>
+                        <input type="text" maxlength="8" id='bag_n_tag' {% if bag.bag_n_tag is not None %} value="{{bag.bag_n_tag}}" {% endif %} name="bag_n_tag" {% if status == 'CLOSED' %} disabled {% endif %} class="form-control" placeholder="AHXXXXXX" >
+                    </div>
+                    {% if 'DPR' not in title %}
+                    <div class="form-group col-3">
+                        <label for="bag_details" class="col-form-label">Bagage détails</label>
+                        <input type="text" id='bag_details' {% if bag.bag_details is not None %} value="{{bag.bag_details}}" {% endif %} name="bag_details" {% if status == 'CLOSED' %} disabled {% endif %} class="form-control" placeholder="Ex : Ruban jaune sur la poignée" required >
+                    </div>
+                    {% endif %}
+                    <div class="form-group col-2">
+                        <label for="bag_id" class="col-form-label">Bagage ID {{bag.bag_status}} </label>
+                        <input type="text" id='bag_id' {% if bag.bag_id is not None %} value="{{bag.bag_id}}" {% endif %} name="bag_id" class="form-control" placeholder="Ex : RD01CXX" {% if status == 'CLOSED' %} disabled {% endif %} {% if not bag.bag_status %} required {% endif %} >
+                    </div>
+                    {% if 'DPR' in title %}
+                    <div class="form-group col-3">
+                        <label for="bag_dmg_mrd" class="col-form-label">Bagage type of damage</label>
+                        <input type="text" id='bag_dmg_mrd' {% if bag.bag_dmg_mrd is not None %} value="{{bag.bag_dmg_mrd}}" {% endif %} name="bag_dmg_mrd" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="Ex : SIDE/04MA" {% if not bag.bag_status %} required {% endif %} >
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="bag_content_dmg" class="col-form-label">Dommage du contenu</label>
+                        <input type="text" id='bag_content_dmg' {% if bag.bag_content_dmg is not None %} value="{{bag.bag_content_dmg}}" {% endif %} name="bag_content_dmg" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="Ex : Le contenu est mouillé" {% if not bag.bag_status %} required {% endif %} >
+                    </div>
+                    {% endif %}
+                    {% if 'OHD' in title %}
+                    <div class="form-group col-4">
+                        <label for="bag_adr" class="col-form-label">Addresse mentionnée sur le bagage</label>
+                        <input type="text" id='bag_adr' {% if bag.bag_adr is not None %} value="{{bag.bag_adr}}" {% endif %} name="bag_adr" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="Addresse ..." >
+                    </div>
+                    <div class="form-group col-3">
+                        <label for="bag_phone" class="col-form-label">Num. Tél. mentionnée sur le bagage</label>
+                        <input type="number" id='bag_phone' {% if bag.bag_phone is not None %} value="{{bag.bag_phone}}" {% endif %} name="bag_phone" {% if status == 'CLOSED' %} disabled {% endif %} class="form-control" placeholder="Téléphone" >
+                    </div>
+                    {% endif %}
+                    <div class="form-group col-xl-12">
+                        <label for="bag_obs" class="col-form-label">Observations</label>
+                        <textarea name="bag_obs" id="bag_obs" cols="30" rows="5" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="Ex : Le contenu du bagage ...">{% if bag.bag_obs is not None %}{{bag.bag_obs}}{%endif%}</textarea>
+                    </div>
+                    {% if not obj.bag_status and 'AHL' in title %}
+                    <div class="form-group col-6">
+                        <label for="bag_found" class="col-form-label">Status</label>
+                        <select class="custom-select" name="bag_found" class="bag_found" {% if status == 'CLOSED' %} disabled {% endif %} {%if obj.bag_found %} disabled {% endif %} required>
+                            <option value="oui" {% if bag.bag_found %} selected {% endif %} >BAGAGE LOCALISÉ</option>
+                            <option value="non" {% if not bag.bag_found %} selected {% endif %}>BAGAGE PAS ENCORE LOCALISÉ</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+                <hr class="mt-3" style="color: black !important; height: 2px !important;">
+                {% endfor %}
+                {% else %}
                 <p class="col-2 text-center align-self-center h5">Bagage N° <span class="n_bag">1</span> </p>
                 <div class="col-sm-10 row">
-                    <div class="form-group col-sm-1">
-                        <label for="bag_weight" class="col-form-label">Poids ( KG )</label>
+                    {% if 'OHD' not in title %}
+                    <div class="form-group col-11">
+                        <label for="bag_status" class="col-form-label">Type du bagage</label>
                         {% if 'AJOUT' in title %}
-                        <input type="number" min="0" step="0.01" id='bag_weight' name="bag_weight" value="{{bag_weight}}" class="form-control" placeholder="Poids" required>
+                        <select class="custom-select" name="bag_status" class="bag_status" required>
+                            <option value="oui">BAGAGE REÇU</option>
+                            <option value="non" selected>BAGAGE MANQUANT / ENDOMMAGÉ</option>
+                        </select>
                         {% else %}
-                        <input type="number" min="0" step="0.01" id='bag_weight' value="{{obj.bag_weight}}" name="bag_weight" class="form-control" placeholder="Poids" required readonly>
+                        <input type="text" name="bag_status" id="bag_status" class="form-control" placeholder="Ex : Le contenu du bagage ..."></textarea>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if 'OHD' not in title %}
+                    <p class="close_bag ml-auto col-sm-auto" style="color: black; cursor: pointer; transform: rotate(45deg); font-weight: lighter; font-size:4em; display: none;">+</p>
+                    {% endif %}
+                    <div class="form-group col-sm-2">
+                        <label for="bag_weight" class="col-form-label">Poids</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="number" min="0" step="0.01" id='bag_weight' name="bag_weight" value="{{bag_weight}}" class="form-control" placeholder="Kg ..." required>
+                        {% else %}
+                        <input type="number" min="0" step="0.01" id='bag_weight' {% if obj.bag_weight is not None %} value="{{obj.bag_weight}}" {% endif %} name="bag_weight" class="form-control" placeholder="Poids" required >
                         {% endif %}
                     </div>
                     <div class="form-group col-sm-2">
@@ -354,23 +661,15 @@ Détails
                         {% if 'AJOUT' in title %}
                         <input type="text" id='bag_brand' name="bag_brand" value="{{bag_brand}}" class="form-control" placeholder="Marque" required>
                         {% else %}
-                        <input type="text" id='bag_brand' value="{{obj.bag_brand}}" name="bag_brand" class="form-control" placeholder="Marque" required readonly>
+                        <input type="text" id='bag_brand' {% if obj.bag_brand is not None %} value="{{obj.bag_brand}}" {% endif %} name="bag_brand" class="form-control" placeholder="Marque" required >
                         {% endif %}
                     </div>
-                    <div class="form-group col-sm-1">
-                        <label for="n_tag" class="col-form-label">Tag</label>
+                    <div class="form-group col-sm-2">
+                        <label for="bag_n_tag" class="col-form-label">Tag</label>
                         {% if 'AJOUT' in title %}
-                        <input type="text" maxlength="8" id='n_tag' name="n_tag" value="{{n_tag}}" class="form-control" placeholder="AHXXXXXX">
+                        <input type="text" maxlength="8" id='bag_n_tag' name="bag_n_tag" value="{{bag_n_tag}}" class="form-control" placeholder="AHXXXXXX" {% if 'OHD' not in title %} required {% endif %} >
                         {% else %}
-                        <input type="text" maxlength="8" id='n_tag' value="{{obj.n_tag}}" name="n_tag" class="form-control" placeholder="AHXXXXXX" readonly>
-                        {% endif %}
-                    </div>
-                    <div class="form-group col-2">
-                        <label for="etkt" class="col-form-label">ETKT</label>
-                        {% if 'AJOUT' in title %}
-                        <input type="text" maxlength="14" id='etkt' name="etkt" value="{{etkt}}" class="form-control" placeholder="ETKT" required>
-                        {% else %}
-                        <input type="text" maxlength="14" id='etkt' value="{{obj.etkt}}" name="etkt" class="form-control" placeholder="ETKT" required readonly>
+                        <input type="text" maxlength="8" id='bag_n_tag' {% if obj.bag_n_tag is not None %} value="{{obj.bag_n_tag}}" {% endif %} name="bag_n_tag" class="form-control" placeholder="AHXXXXXX" {% if 'OHD' not in title %} required {% endif %} >
                         {% endif %}
                     </div>
                     {% if 'DPR' not in title %}
@@ -379,16 +678,16 @@ Détails
                         {% if 'AJOUT' in title %}
                         <input type="text" id='bag_details' name="bag_details" value="{{bag_details}}" class="form-control" placeholder="Ex : Ruban jaune sur la poignée" required>
                         {% else %}
-                        <input type="text" id='bag_details' value="{{obj.bag_details}}" name="bag_details" class="form-control" placeholder="Ex : Ruban jaune sur la poignée" required readonly>
+                        <input type="text" id='bag_details' {% if obj.bag_details is not None %} value="{{obj.bag_details}}" {% endif %} name="bag_details" class="form-control" placeholder="Ex : Ruban jaune sur la poignée" required >
                         {% endif %}
                     </div>
                     {% endif %}
-                    <div class="form-group col-3">
+                    <div class="form-group col-2">
                         <label for="bag_id" class="col-form-label">Bagage ID</label>
                         {% if 'AJOUT' in title %}
-                        <input type="text" id='bag_id' name="bag_id" class="form-control" placeholder="Ex : RD01CXX" required>
+                        <input type="text" id='bag_id' name="bag_id" class="form-control" placeholder="Ex : RD01CXX" >
                         {% else %}
-                        <input type="text" id='bag_id' value="{{obj.bag_id}}" name="bag_id" class="form-control" placeholder="Ex : RD01CXX" required readonly>
+                        <input type="text" id='bag_id' {% if obj.bag_id is not None %} value="{{obj.bag_id}}" {% endif %} name="bag_id" class="form-control" placeholder="Ex : RD01CXX" required >
                         {% endif %}
                     </div>
                     {% if 'DPR' in title %}
@@ -397,15 +696,15 @@ Détails
                         {% if 'AJOUT' in title %}
                         <input type="text" id='bag_dmg_mrd' name="bag_dmg_mrd" class="form-control" placeholder="Ex : SIDE/04MA" required>
                         {% else %}
-                        <input type="text" id='bag_dmg_mrd' value="{{obj.bag_dmg_mrd}}" name="bag_dmg_mrd" class="form-control" placeholder="Ex : SIDE/04MA" required readonly>
+                        <input type="text" id='bag_dmg_mrd' {% if obj.bag_dmg_mrd is not None %} value="{{obj.bag_dmg_mrd}}" {% endif %} name="bag_dmg_mrd" class="form-control" placeholder="Ex : SIDE/04MA" required >
                         {% endif %}
                     </div>
                     <div class="form-group col-6">
-                        <label for="content_dmg" class="col-form-label">Dommage du contenu</label>
+                        <label for="bag_content_dmg" class="col-form-label">Dommage du contenu</label>
                         {% if 'AJOUT' in title %}
-                        <input type="text" id='content_dmg' name="content_dmg" class="form-control" placeholder="Ex : Le contenu est mouillé" required>
+                        <input type="text" id='bag_content_dmg' name="bag_content_dmg" class="form-control" placeholder="Ex : Le contenu est mouillé" required>
                         {% else %}
-                        <input type="text" id='content_dmg' value="{{obj.content_dmg}}" name="content_dmg" class="form-control" placeholder="Ex : Le contenu est mouillé" required readonly>
+                        <input type="text" id='bag_content_dmg' {% if obj.bag_content_dmg is not None %} value="{{obj.bag_content_dmg}}" {% endif %} name="bag_content_dmg" class="form-control" placeholder="Ex : Le contenu est mouillé" required >
                         {% endif %}
                     </div>
                     {% endif %}
@@ -415,7 +714,7 @@ Détails
                         {% if 'AJOUT' in title %}
                         <input type="text" id='bag_adr' name="bag_adr" class="form-control" placeholder="Addresse ...">
                         {% else %}
-                        <input type="text" id='bag_adr' value="{{obj.bag_adr}}" name="bag_adr" class="form-control" placeholder="Addresse ..." readonly>
+                        <input type="text" id='bag_adr' {% if obj.bag_adr is not None %} value="{{obj.bag_adr}}" {% endif %} name="bag_adr" class="form-control" placeholder="Addresse ..." >
                         {% endif %}
                     </div>
                     <div class="form-group col-3">
@@ -423,34 +722,160 @@ Détails
                         {% if 'AJOUT' in title %}
                         <input type="number" id='bag_phone' name="bag_phone" class="form-control" placeholder="Téléphone">
                         {% else %}
-                        <input type="number" id='bag_phone' value="{{obj.bag_phone}}" name="bag_phone" class="form-control" placeholder="Téléphone" readonly>
+                        <input type="number" id='bag_phone' {% if obj.bag_phone is not None %} value="{{obj.bag_phone}}" {% endif %} name="bag_phone" class="form-control" placeholder="Téléphone" >
                         {% endif %}
                     </div>
                     {% endif %}
-                    {% if 'OHD' not in title %}
-                    <p class="col-2 ml-4 mt-3 h5 align-self-center add_bag" style="cursor: pointer; background-color: white !important;">Ajouter un bagage</p>
-                    {% endif %}
+                    <div class="form-group col-xl-12">
+                        <label for="bag_obs" class="col-form-label">Observations</label>
+                        {% if 'AJOUT' in title %}
+                        <textarea name="bag_obs" id="bag_obs" cols="30" rows="5" class="form-control" placeholder="Ex : Le contenu du bagage ..."></textarea>
+                        {% else %}
+                        <textarea name="bag_obs" id="bag_obs" cols="30" rows="5" class="form-control" placeholder="Ex : Le contenu du bagage ..."></textarea>
+                        {% endif %}
+                    </div>
                 </div>
-                <hr class="mt-3" style="color: black !important;">
+                <hr class="mt-3 divid" style="color: black !important; height: 2px !important;">
+                {% if 'OHD' not in title and 'AJOUT' in title %}
+                <div class="d-flex flex-row ml-auto add_bag col-sm-auto" style="cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" fill="currentColor" class="bi bi-plus-circle-fill" viewBox="0 0 16 16">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z"/>
+                    </svg>
+                    <p class="mb-0 ml-3 h4 align-self-center" style="background-color: white !important;">Ajouter un bagage</p>
+                </div>
+                {% endif %}
+                {% endif %}
             </div>          
         </div>
     </div>
-    <button type="submit" id="submit-form" class="btn btn-lg" style="color: white !important; background-color: #0e385b !important;"><b>AJOUTER</b></button>
+    {% if 'OHD' not in title and obj.status == 'EN COURS D\'INDEMNISATION' %}
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y">
+        <h3 style="font-weight: bolder !important;"><b>INDÉMNISATION</b></h3>
+        <div class="d-flex flex-row">
+            <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>PROPOSITION</b></h5>
+            <a href="{% url 'core:historique-des-propositions' id %}" class="mt-5 ml-auto h5 d-flex flex-row" target="_blank" style="color: grey !important;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-gear-fill mr-2" viewBox="0 0 16 16">
+                    <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+                </svg>
+                <u>Consulter l'historique des propositions</u>
+            </a>
+        </div>
+        <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+        <div class="form-row">
+            <div class="form-group col-sm-1">
+                <label for="monnaie" class="col-form-label">Monnaie</label>
+                {% if ind.dte_prop is not None %}
+                <select class="custom-select" id="monnaie" name="monnaie" {% if status == 'CLOSED' %} disabled {% endif %} required>
+                    <option value="DZD" {% if ind.monnaie == 'DZD' %} selected {% endif %} >DZD</option>
+                    <option value="USD" {% if ind.monnaie == 'USD' %} selected {% endif %}>USD</option>
+                </select>
+                {% else %}
+                <select class="custom-select" id="monnaie" name="monnaie" {% if status == 'CLOSED' %} disabled {% endif %} required>
+                    <option value="DZD">DZD</option>
+                    <option value="USD" selected>USD</option>
+                </select>
+                {% endif %}
+            </div>
+            <div class="form-group col-sm-2">
+                <label for="montant_dzd" class="col-form-label">Montant proposé</label>
+                {% if ind.dte_prop is not None %}
+                <input type="number" id='montant_dzd' name="montant_dzd" value="{{amount}}" class="form-control" placeholder="Montant" {% if status == 'CLOSED' %} disabled {% endif %} required >
+                {% else %}
+                <input type="number" min="0" step="0.01" id='montant_dzd' name="montant_dzd" class="form-control" placeholder="Montant" {% if status == 'CLOSED' %} disabled {% endif %} required >
+                {% endif %}
+            </div>
+            {% if ind.dte_prop is not None %}
+            <div class="form-group col-sm-2">
+                <label for="accord" class="col-form-label">Accord ?</label>
+                {% if ind.dte_prop is not None %}
+                <select class="custom-select" id="accord" name="accord" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} required>
+                    <option value="oui" {% if ind.accord %} selected {% endif %} >OUI</option>
+                    <option value="non" {% if not ind.accord %} selected {% endif %}>NON</option>
+                </select>
+                {% else %}
+                <select class="custom-select" id="accord" name="accord" {% if status == 'CLOSED' %} disabled {% endif %} required>
+                    <option value="oui">OUI</option>
+                    <option value="non" selected>NON</option>
+                </select>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    <button type="submit" id="submit-form" class="btn btn-lg" style="color: white !important; background-color: #0e385b !important;" {% if status == 'CLOSED' %} disabled {% endif %}><b>{% if 'AJOUT' in title %}AJOUTER{% else %}MODIFIER{% endif %}</b></button>
 </form>
 
 
 <script>
 
     var cloneCount = 1;
+    var add_flt;
+    var add_bag;
 
-    $('.add_bag').on('click', function(){
-        $(".bag_card:last").clone(true, true).insertAfter("div.bag_card:last");
+    $('div').on('click', 'div.add_bag', function(){
+        console.log('ASXDEC')
+        $(".bag_card:last").clone(true, true).insertAfter("div.bag_card:last").find(".form-control").val("");
         $('.bag_card:last input').each(function(){
             $(this).attr('id', $(this).attr('id').slice(0,-1) + cloneCount.toString())
         })
         cloneCount++;
         $('.n_bag:last').text((parseInt($('.n_bag:last').text()) + 1).toString())
         $('div.bag_card:last').prev('div').find('.add_bag').remove();
+        $('div.bag_card:last').find('.close_bag').show();
+        $('div.bag_card:last').prev('.bag_card').find('.close_bag').hide();
+        add_bag = $('div.bag_card:last').find('.add_bag').get(0)
+        // $('div.bag_card:last').find('.add_bag').remove();
+    });
+
+    $('.close_bag').on('click', function(){
+        // var add_flt = $('.add_flt').get(0)
+        $(this).closest('.bag_card').remove();
+        $('div.bag_card:last').find('.divid:last').after(add_bag);
+        if(parseInt($('.n_bag:last').text()) != 1){
+            $('div.bag_card:last').find('.close_bag').show();
+        }
+    })
+
+    $('div').on('click', 'div.add_flt', function(){
+        console.log('ASXCDER')
+        $(".flt_card:last").clone(true, true).insertAfter("div.flt_card:last").find(".form-control").val("");
+        $('.flt_card:last input').each(function(){
+            $(this).attr('id', $(this).attr('id').slice(0,-1) + cloneCount.toString())
+        })
+        cloneCount++;
+        $('.n_flt:last').text((parseInt($('.n_flt:last').text()) + 1).toString())
+        $('.hid_flt:last').val((parseInt($('.n_flt:last').text())).toString())
+        $('div.flt_card:last').prev('div').find('.add_flt').remove();
+        $('div.flt_card:last').find('.close').show();
+        $('div.flt_card:last').prev('.flt_card').find('.close').hide();
+        add_flt = $('div.flt_card:last').find('.add_flt').get(0)
+        if(parseInt($('.n_flt:last').text()) == 4){
+            $('div.flt_card:last').find('.add_flt').remove();
+        }
+    });
+
+    $('.close').on('click', function(){
+        // var add_flt = $('.add_flt').get(0)
+        $(this).closest('.flt_card').remove();
+        console.log(add_flt)
+        $('.flt_card > .row > hr:last').after(add_flt);
+        if(parseInt($('.n_flt:last').text()) != 1){
+            $('div.flt_card:last').find('.close').show();
+        }
+    })
+
+    $('.bag_status').on('change', function(){
+        if( $('.bag_status').val() == 'oui' ){
+            $(this).closest('.bag_card').find('#bag_id').prop('required', false);
+            $(this).closest('.bag_card').find('#bag_content_dmg').prop('required', false);
+            $(this).closest('.bag_card').find('#bag_dmg_mrd').prop('required', false);
+        }
+        else{
+            $(this).closest('.bag_card').find('#bag_id').prop('required', true);
+            $(this).closest('.bag_card').find('#bag_content_dmg').prop('required', true);
+            $(this).closest('.bag_card').find('#bag_dmg_mrd').prop('required', true);
+        }
     });
 
     $("#pax_country_res").countrySelect({
@@ -460,9 +885,9 @@ Détails
     $('#deliv').on('change', function(){
         if($('#deliv').val() == 'other'){
             $('.other_prs').slideDown('slow');
-            $('#pax_delivery_phone').prop('required', true)
-            $('#pax_delivery_mail').prop('required', true)
-            $('#pax_delivery_adr').prop('required', true)
+            $('#other_delivery_phone').prop('required', true)
+            $('#other_delivery_mail').prop('required', true)
+            $('#other_delivery_adr').prop('required', true)
             $('.deliv_infos').slideUp('slow');
             $('#pax_delivery_adr').prop('required', false)
             $('#pax_stay_until').prop('required', false)
@@ -470,26 +895,34 @@ Détails
         else{
             $('.other_prs').slideUp('slow');
             $('#pax_delivery_phone').prop('required', false)
-            $('#pax_delivery_mail').prop('required', false)
-            $('#pax_delivery_adr').prop('required', false)
+            $('#other_delivery_mail').prop('required', false)
+            $('#other_delivery_adr').prop('required', false)
             $('.deliv_infos').slideDown('slow');
             $('#pax_delivery_adr').prop('required', true)
             $('#pax_stay_until').prop('required', true)
         }
     })
 
-    const phoneInputField = document.querySelector("#pax_phone");
-    const phoneInput = window.intlTelInput(phoneInputField, {
-        initialCountry: "dz",
-        utilsScript:
-        "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+    // $('.nbag').on('change', function(){
+    //     var tot = 0;
+    //     $('.nbag').each(function(){
+    //         tot += parseInt($(this).val())
+    //     });
+    //     var nbag = 0;
+    //     $('[name = "bag_n_tag"]').each(function(){
+    //         nbag += 1
+    //     });
+    //     if(nbag != tot){
+    //         alert('Veuillez inserer les ' + tot + ' bagages.')
+    //     }
+    // });
+
+    $('form').submit(function(e) {
+        $(':disabled').each(function(e) {
+            $(this).removeAttr('disabled');
+        })
     });
-    const phoneInputField2 = document.querySelector("#pax_delivery_phone");
-    const phoneInput2 = window.intlTelInput(phoneInputField2, {
-        initialCountry: "dz",
-        utilsScript:
-        "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
-    });
+
   </script>
 
 {% endblock content %}

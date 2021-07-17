@@ -3,6 +3,7 @@ from django.utils.text import slugify
 import datetime
 from django.utils import timezone
 import os
+from django.utils.translation import gettext as _
 # pylint: disable=E1101
 # pylint: disable=import-error
 # pylint: disable=no-name-in-module
@@ -10,6 +11,7 @@ from core.models import (
     FLIGHT_ASSIST,
     FLIGHT_OCCAS,
     COMP_DISPATCHER,
+    BAG_DETAILS
 )
 
 
@@ -114,3 +116,30 @@ def filename(value):
 def subtract(value, arg):
     return value - arg
 
+@register.filter(expects_localtime=True)
+def days_since(value, arg=None):
+    try:
+        tzinfo = getattr(value, 'tzinfo', None)
+        value = datetime.date(value.year, value.month, value.day)
+    except AttributeError:
+        # Passed value wasn't a date object
+        return value
+    except ValueError:
+        # Date arguments out of range
+        return value
+    today = datetime.datetime.now(tzinfo).date()
+    delta = value - today
+    if abs(delta.days) == 1:
+        day_str = _("jour")
+    else:
+        day_str = _("jours")
+
+    if delta.days < 1:
+        fa_str = _("ago")
+    else:
+        fa_str = _("from now")
+    return "J+%s" % abs(delta.days)
+
+@register.filter
+def bag_id(id):
+    return BAG_DETAILS.objects.get(suivi=id).bag_n_tag

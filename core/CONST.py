@@ -158,9 +158,10 @@ TYPE = (
 )
 
 status = (
-    (0, 'NEW'),
-    (1, 'SUSPENDU'),
-    (2, 'FERMé'.upper()),
-    (3, 'REçU'.upper())
+    (0, 'RECH. PRIMAIRE'),
+    (1, 'RECH. SECONDAIRE'),
+    (2, 'SUSPENDU'),
+    (3, 'EN COURS D\'INDEMNISATION'.upper()),
+    (4, 'CLOSED'.upper())
 )
 
