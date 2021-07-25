@@ -20,6 +20,13 @@ Price List
 </div>
 {% endif %}
 
+<a href="{% url 'core:exchange-rates' %}" class="d-flex flex-row justify-content-end ml-auto mb-4 mt-4 p-4" style="color: black; background-color: #e8e8e8; border-radius: 10px; max-width: max-content !important;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-currency-exchange" viewBox="0 0 16 16">
+        <path d="M0 5a5.002 5.002 0 0 0 4.027 4.905 6.46 6.46 0 0 1 .544-2.073C3.695 7.536 3.132 6.864 3 5.91h-.5v-.426h.466V5.05c0-.046 0-.093.004-.135H2.5v-.427h.511C3.236 3.24 4.213 2.5 5.681 2.5c.316 0 .59.031.819.085v.733a3.46 3.46 0 0 0-.815-.082c-.919 0-1.538.466-1.734 1.252h1.917v.427h-1.98c-.003.046-.003.097-.003.147v.422h1.983v.427H3.93c.118.602.468 1.03 1.005 1.229a6.5 6.5 0 0 1 4.97-3.113A5.002 5.002 0 0 0 0 5zm16 5.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0zm-7.75 1.322c.069.835.746 1.485 1.964 1.562V14h.54v-.62c1.259-.086 1.996-.74 1.996-1.69 0-.865-.563-1.31-1.57-1.54l-.426-.1V8.374c.54.06.884.347.966.745h.948c-.07-.804-.779-1.433-1.914-1.502V7h-.54v.629c-1.076.103-1.808.732-1.808 1.622 0 .787.544 1.288 1.45 1.493l.358.085v1.78c-.554-.08-.92-.376-1.003-.787H8.25zm1.96-1.895c-.532-.12-.82-.364-.82-.732 0-.41.311-.719.824-.809v1.54h-.005zm.622 1.044c.645.145.943.38.943.796 0 .474-.37.8-1.02.86v-1.674l.077.018z"/>
+    </svg>
+    <p class="h4 ml-2 mb-0">Taux d'échanges</p>
+</a>
+
 <div class="d-flex">
     <div class="mb-2 w-50">
         <div class="user d-flex flex-row">
@@ -36,14 +43,26 @@ Price List
             <p class="ml-2 text-muted font-weight-normal">{{obj.date_last_edit |date:'d F Y - H:i'}}</p>
         </div>
     </div>
-    {% if request.user.profile.poste == 'CHEF DEPARTEMENT' %}
+    {% if request.user.profile.poste == 'CHEF DEPARTEMENT' and hist %}
     <div class="form-group ml-auto mt-2">
-        <input type="checkbox" class="form-check-input" id="fiche_received" checked>
-        <label class="form-check-label h4 mr-3 mb-0" for="fiche_received"><b>LOCKED</b></label>
+        <input type="checkbox" class="form-check-input" id="newpl_check" checked>
+        <label class="form-check-label h4 mr-3 mb-0" for="newpl_check"><b>LOCKED</b></label>
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16">
             <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
           </svg>
     </div>
+    {% endif %}
+</div>
+
+<div class="d-flex flex-row">
+    <p class="h5 mb-4 text-muted">Cette price list est effective depuis le {{obj.dte_begin|date:'d/m/Y'}} jusqu'au {{obj.dte_end|date:'d/m/Y'}} ( - {{obj.dte_end|days_until}} jours ) </p>
+    {% if hist %}
+    <a href="{% url 'core:annuaire-prices-list' %}" class="ml-auto h5 d-flex flex-row" target="_blank" style="color: grey !important;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-gear-fill mr-2" viewBox="0 0 16 16">
+            <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+        </svg>
+        <u>Consulter les Prices List</u>
+    </a>
     {% endif %}
 </div>
 
@@ -54,6 +73,28 @@ Price List
 <form method="POST" action="{% url 'core:valid-price-list' %}" class="form">
     {% csrf_token %}
     <!-- FACTURATION -->
+    <div id="new_pl" class="shadow p-3 mb-5 bg-white rounded w-100y" style="display: none;">
+        <h3 class="mb-4" style="font-weight: bolder !important;"><b>AJOUT D'UNE NOUVELLE PRICE LIST</b></h3>
+        <div class="alert alert-warning alert-dismissible fade show align-items-center mb-4" role="alert">
+            <div class="d-flex flex-row">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#6b6818" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                  </svg>
+                <h4 class="mb-4 ml-3 align-self-end" style="font-weight: bolder !important;"><b>NOTE IMPORTANTE</b></h4>
+            </div>
+            <p class="mb-0 font-weight-bold">Vous êtes sur le point de créer une nouvelle Price List en cliquant sur modifier et en renseignant les dates de début et de fin ! ( non-modifiables )</p>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="dte_begin" class="col-form-label">Date de début</label>
+                <input type="date" id='dte_begin' name="dte_begin" class="form-control" required>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="dte_end" class="col-form-label">Date de fin</label>
+                <input type="date" id='dte_end' name="dte_end" class="form-control" required>
+            </div>
+        </div>
+    </div>
     <div id="fact" class="shadow p-3 mb-5 bg-white rounded w-100y">
         <h3 class="mb-4" style="font-weight: bolder !important;"><b>FACTURATION</b></h3>
         <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>TARIFS DE BASE</b> &nbsp;&nbsp;<span style="color: gray !important;">( USD ) &nbsp;&nbsp; -  &nbsp;&nbsp;Hors taxes</span></h5>
@@ -285,8 +326,8 @@ Price List
                 <input type="number" min="0" step="0.1" id='VIP_BUS' name="VIP_BUS" value="{{obj.VIP_BUS}}" class="form-control input" required readonly>
             </div>
             <div class="form-group col-md-2">
-                <label for="PUSH_BACK" class="col-form-label">VEHICULE-TRANSPORT PISTE</label>
-                <input type="number" min="0" step="0.1" id='PUSH_BACK' name="PUSH_BACK" value="{{obj.PUSH_BACK}}" class="form-control input" required readonly>
+                <label for="VEHICULE_TRANSP_PISTE" class="col-form-label">VEHICULE-TRANSPORT PISTE</label>
+                <input type="number" min="0" step="0.1" id='VEHICULE_TRANSP_PISTE' name="VEHICULE_TRANSP_PISTE" value="{{obj.VEHICULE_TRANSP_PISTE}}" class="form-control input" required readonly>
             </div>
             <div class="form-group col-md-2">
                 <label for="PUSH_BACK" class="col-form-label">PUSH BACK</label>
@@ -401,7 +442,24 @@ Price List
 
   <script>
 
-        $('#fiche_received').on('change', function(){
+        $('#newpl_check').on('change', function(){
+            if($('#newpl_check').prop('checked') == false){
+                $('#new_pl').slideDown('slow')
+                $('#dte_begin').attr('name', 'dte_begin')
+                $('#dte_end').attr('name', 'dte_end')
+                $('#dte_begin').attr('required', true)
+                $('#dte_end').attr('required', true)
+            }
+            else{
+                $('#new_pl').slideUp('slow')
+                $('#dte_begin').removeAttr('name')
+                $('#dte_end').removeAttr('name')
+                $('#dte_begin').attr('required', false)
+                $('#dte_end').attr('required', false)
+            }
+        });
+
+        $('#newpl_check').on('change', function(){
             var chk = $(this).is(':checked');
             if(!chk){
                 $(':input').prop('readonly', false);

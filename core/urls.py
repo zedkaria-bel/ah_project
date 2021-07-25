@@ -20,6 +20,7 @@ from .views import (
     CompanyDetail,
     valid_fiche,
     price_list,
+    price_list_actual,
     ValidPriceList,
     FichesTouchee,
     gestion_affect_fiches,
@@ -49,6 +50,10 @@ from .views import (
     BagCaseDetails,
     valid_case,
     HistIndemn,
+    AllPriceList,
+    ExchangeRates,
+    validExchRate,
+    fact_regular_bill,
 )
 
 app_name = 'core'
@@ -57,12 +62,13 @@ urlpatterns = [
     path('', home_view, name='home-view'),
     path('get-back', get_back, name = 'get-back'),
     path('request-summary/<str:activite>/', RequestSummary.as_view(), name = 'request-summary'),
+    path('request-summary/<str:activite>/<str:qs>/', RequestSummary.as_view(), name = 'request-summary-specials'),
     path('flight-detail/<slug>/', FlightOccas.as_view(), name = 'flight-detail'),
     path('add-occas-flight/', add_vol_occas_view, name = 'add-occas-flight'),
     path('valid-company/', valid_company, name = 'valid-company'),
     path('valid-date/', valid_date, name = 'valid-date'),
     path('valid-vol-occas/', AddVolOccas.as_view(), name = 'valid-vol-occas'),
-    path('agent-summary/', agent_flight_summary.as_view(), name='agent-summary'),
+    path('agent-summary/<str:activite>/', agent_flight_summary.as_view(), name='agent-summary'),
     path('post-vol/<slug>/', post_vol.as_view(), name = 'post-vol'),
     path('valid-services/', valid_services, name = 'valid-services'),
     path('valid-releve-touchee/', validReleveTouchee.as_view(), name = 'valid-releve-touchee'),
@@ -73,7 +79,9 @@ urlpatterns = [
     path('valid-new-company-name/', valid_new_company_name, name = 'valid-new-company-name'),
     path('compagnie-detail/<slug>/', CompanyDetail.as_view(), name = 'compagnie-detail'),
     path('valid-fiche/', valid_fiche, name = 'valid-fiche'),
-    path('price-list/', price_list, name = 'price-list'),
+    path('price-list/<pk>/', price_list.as_view(), name = 'price-list'),
+    path('price-list/', price_list_actual, name = 'price-list-actual'),
+    path('annuaire-prices-list/', AllPriceList.as_view(), name = 'annuaire-prices-list'),
     path('valid-price-list/', ValidPriceList.as_view(), name = 'valid-price-list'),
     path('fiche-touchee/', FichesTouchee.as_view(), name = 'fiche-touchee'),
     path('fiche-touchee/gestion-fiches/', gestion_affect_fiches, name = 'gestion-fiches'),
@@ -105,4 +113,8 @@ urlpatterns = [
     path('valid-bag-case/', validBagCase.as_view(), name = 'valid-bag-case'),
     path('valid-case/', valid_case, name = 'valid-case'),
     path('bag-case/<pk>/historique-des-propositions/', HistIndemn.as_view(), name = 'historique-des-propositions'),
+    path('exchange-rates/', ExchangeRates.as_view(), name = 'exchange-rates'),
+    path('valid-exchange-rate/', validExchRate.as_view(), name = 'valid-exchange-rate'),
+    path('fact-regular-bill/<int:id>/', fact_regular_bill.as_view(), name = 'fact-regular-bill')
+
 ]

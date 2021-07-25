@@ -8,6 +8,7 @@ Liste des compagnies
 
 {% block content %}
 
+
 <a href=" {% url 'core:gestion-fiches' %} " class="btn fixed-top btn-lg my-0 p float-right mb-4" style="color: white !important; background-color: #0e385b !important;">
     <b>GÉRER LES AFFECTATIONS DES FICHES</b>
 </a>
@@ -30,12 +31,12 @@ Liste des compagnies
                 <th scope="row"><b>{{ forloop.counter }}</b></th>
                 <td><b>{{fiche.n_fiche}}</b></td>
                 <td><b>{{fiche.escale.escale}} - {{fiche.escale.full_name}} </b></td>
-                {% if fiche.status == 'CONSOMMÉ' %}
-                <td><b class="h4"><span class="badge badge-success">{{fiche.status}}</span></b></td>
+                {% if fiche.status == 'CONSOMME' %}
+                <td><b class="h4"><span class="badge badge-success">CONSOMMÉ</span></b></td>
                 {% elif fiche.status == 'NEW' %}
                 <td><b class="h4"><span class="badge badge-primary">{{fiche.status}}</span></b></td>
                 {% else %}
-                <td><b class="h4"><span class="badge badge-danger">{{fiche.status}}</span></b></td>
+                <td><b class="h4"><span class="badge badge-danger">ANNULÉ</span></b></td>
                 {% endif %}
                 <td><b>
                     {% if fiche.status == 'ANNULE' %}
@@ -77,6 +78,7 @@ Liste des compagnies
             "ordering": false,
             "paging": true,
             "pagingType": "full_numbers",
+            "deferRender": true
         });
         $('.dataTables_paginate').addClass('pagination pagination-lg d-flex justify-content-center mt-5');
     } );

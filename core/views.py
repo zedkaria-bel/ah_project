@@ -42,8 +42,10 @@ from .models import (
     HISTORIQUE_OP_COMPANY,
     BAG_SUIVI, BAG_ID_CHART, BAG_MRD_TYPE_DMG, BAG_RL, BAG_DETAILS, BAG_FLIGHTS,
     BAG_HIST_INDEMN,
+    User,
 )
-
+from django_datatables_view.base_datatable_view import BaseDatatableView
+from django.utils.html import escape
 import requests
 
 escales = ESCALES.objects.all()
@@ -92,7 +94,7 @@ def assist_standby(obj, etat):
     return False
 
 def get_absence_demande_peno(obj):
-    comp = TARIF_OCCAS.objects.get(auto_id = 1)
+    comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.act_dte_arr, dte_end__gte = obj.act_dte_arr)
     if datetime.datetime.combine(obj.date_arrivee, obj.sta) - datetime.datetime.combine(obj.date_demande, obj.heure_demande) < datetime.timedelta(hours=24):
         return True
     return False
@@ -113,7 +115,10 @@ def check_retard(obj):
 def get_tarif_de_base(obj):
     comp = COMP_DISPATCHER.objects.get(company_dispatcher=obj.compagnie_dispatcher)
     if comp.activite == 'OCCASIONNEL':
-        comp = TARIF_OCCAS.objects.get(auto_id = 1)
+        if obj.act_dte_arr is not None:
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.act_dte_arr, dte_end__gte = obj.act_dte_arr)
+        else:
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.date_arrivee, dte_end__gte = obj.date_arrivee)
     tarif_base = 0
     # MTOW - NATURE TOUCHEE ------------------------------------------------------------------------------>
     if float(obj.mtow_tonnes_field) <= 10:
@@ -156,7 +161,10 @@ def get_tarif_de_base(obj):
 def get_extra_services_tarif(obj):
     comp = COMP_DISPATCHER.objects.get(company_dispatcher=obj.compagnie_dispatcher)
     if comp.activite == 'OCCASIONNEL':
-        comp = TARIF_OCCAS.objects.get(auto_id = 1)
+        if obj.act_dte_arr is not None:
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.act_dte_arr, dte_end__gte = obj.act_dte_arr)
+        else:
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.date_arrivee, dte_end__gte = obj.date_arrivee)
     extra_service = 0
     extra_service = (obj.ASSIST_UM * (comp.ASSIST_UM)) + (obj.ASSIST_WCH * (comp.ASSIST_WCH)) + (obj.ASSIST_TRANSIT * (comp.ASSIST_TRANSIT)) + \
     (obj.ACC_SALON * (comp.ACC_SALON)) + (obj.ASSIST_VIP * (comp.ASSIST_VIP)) + (obj.USE_DCS * (comp.USE_DCS)) + (obj.DEPORTEE * (comp.DEPORTEE)) + \
@@ -183,8 +191,12 @@ def get_extra_services_tarif(obj):
 def get_majoration(obj, etat):
     # MAJORATION
     comp = COMP_DISPATCHER.objects.get(company_dispatcher=obj.compagnie_dispatcher)
+    act = comp.activite
     if comp.activite == 'OCCASIONNEL':
-        comp = TARIF_OCCAS.objects.get(auto_id = 1)
+        if etat == 'sched':
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.date_arrivee, dte_end__gte = obj.date_arrivee)
+        else:
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.act_dte_arr, dte_end__gte = obj.act_dte_arr)
     major_1 = 0
     if assist_night(obj, etat):
         major_1 += comp.assist_night
@@ -196,7 +208,7 @@ def get_majoration(obj, etat):
         obj.major_weekend = comp.assist_weekend
     else:
         obj.major_weekend = 0
-    if get_absence_demande_peno(obj):
+    if act == 'OCCASIONNEL' and get_absence_demande_peno(obj):
         major_1 += comp.abs_demande
         obj.major_abs_demande = comp.abs_demande
     else:
@@ -226,7 +238,10 @@ def get_majoration(obj, etat):
 def get_penalite_cnl(obj):
     comp = COMP_DISPATCHER.objects.get(company_dispatcher=obj.compagnie_dispatcher)
     if comp.activite == 'OCCASIONNEL':
-        comp = TARIF_OCCAS.objects.get(auto_id = 1)
+        if obj.act_dte_arr is not None:
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.act_dte_arr, dte_end__gte = obj.act_dte_arr)
+        else:
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.date_arrivee, dte_end__gte = obj.date_arrivee)
     major_cnl = 0
     if obj.etat_du_vol == 'ANNULE':
         if obj.cnl_eta <= datetime.timedelta(hours=12):
@@ -238,7 +253,10 @@ def get_penalite_cnl(obj):
 def get_reduction(obj):
     comp = COMP_DISPATCHER.objects.get(company_dispatcher=obj.compagnie_dispatcher)
     if comp.activite == 'OCCASIONNEL':
-        comp = TARIF_OCCAS.objects.get(auto_id = 1)
+        if obj.act_dte_arr is not None:
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.act_dte_arr, dte_end__gte = obj.act_dte_arr)
+        else:
+            comp = TARIF_OCCAS.objects.get(dte_begin__lte = obj.date_arrivee, dte_end__gte = obj.date_arrivee)
     reduct = 0
     if obj.nature_touchee == 'PAX' and (obj.escale == 'ALG' or obj.escale == 'ORN' or obj.escale == 'CZL'):
         if (obj.pax_arriv == 0 and obj.cargo_arriv == 0) or (obj.pax_dep == 0 and obj.cargo_dep == 0):
@@ -258,7 +276,9 @@ def home_view(request):
     if not request.user.is_authenticated:
         return redirect('account_login')
     elif request.user.profile.escale is not None:
-        return redirect('core:agent-summary')
+        return redirect(reverse('core:agent-summary', kwargs = {
+            'activite' : 'contrat'
+        }))
     elif request.user.profile.dpt == 'DPT RECHERCHES ET INDEMNISATION DES BAGAGES':
         return redirect(reverse('core:luggage-view', kwargs = {
             'opt' : 'ahl'
@@ -280,17 +300,98 @@ class RequestSummary(ListView):
     def get_queryset(self):
         if self.kwargs['activite'] == 'occas':
             comp = COMP_DISPATCHER.objects.filter(activite='OCCASIONNEL').values_list('company_dispatcher')
-            return FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = comp).order_by('-date_demande', '-date_arrivee')
+            qs = FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = comp)
         else:
             comp = COMP_DISPATCHER.objects.filter(activite='CONTRACTUEL').values_list('company_dispatcher')
-            return FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = comp).order_by('-date_arrivee')
+            qs = FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = comp)
+        if 'qs' in self.kwargs:
+            if self.kwargs['qs'] == 'awaiting-billing':
+                qs = qs.filter(montant_globale__isnull = False, n_facture__isnull = True)
+            else:
+                exc = ['OPERE', 'NO OP', 'ANNULE']
+                if self.kwargs['activite'] == 'occas':
+                    qs = qs.exclude(etat_du_vol__in = exc)
+                else:
+                    qs = qs.filter(date_arrivee = datetime.datetime.now().date()).exclude(etat_du_vol__in = exc)
+        if self.request.GET.get('etat_du_vol') and self.request.GET.get('etat_du_vol') != 'all':
+            qs = qs.filter(etat_du_vol = self.request.GET.get('etat_du_vol'))
+        if self.request.GET.get('nature_touchee') and self.request.GET.get('nature_touchee') != 'all':
+            qs = qs.filter(nature_touchee = self.request.GET.get('nature_touchee'))
+        if self.request.GET.get('escale') and self.request.GET.get('escale') != 'all':
+            qs = qs.filter(escale = self.request.GET.get('escale'))
+        if self.request.GET.get('compagnie_dispatcher') and self.request.GET.get('compagnie_dispatcher') != 'all':
+            qs = qs.filter(compagnie_dispatcher = self.request.GET.get('compagnie_dispatcher'))
+        if self.request.GET.get('fiche_received') and self.request.GET.get('fiche_received') != 'all':
+            if self.request.GET.get('fiche_received') == 'oui':
+                qs = qs.filter(fiche_received = True)
+            else:
+                qs = qs.filter(Q(fiche_received = False) | Q(fiche_received__isnull = True ))
+        if self.request.GET.get('fiche_phys_received') and self.request.GET.get('fiche_phys_received') != 'all':
+            if self.request.GET.get('fiche_phys_received') == 'oui':
+                qs = qs.filter(fiche_phys_received = True)
+            else:
+                qs = qs.filter(Q(fiche_phys_received = False) | Q(fiche_phys_received__isnull = True))
+        if self.request.GET.get('date_arrivee_1') and self.request.GET.get('date_arrivee_1') != '':
+            date_1 = datetime.datetime.strptime(self.request.GET.get('date_arrivee_1'), '%Y-%m-%d')
+        else:
+            date_1 = None
+        if self.request.GET.get('date_arrivee_2') and self.request.GET.get('date_arrivee_2') != '':
+            date_2 = datetime.datetime.strptime(self.request.GET.get('date_arrivee_2'), '%Y-%m-%d')
+        else:
+            date_2 = None
+        if date_1 and date_2:
+            qs = qs.filter(date_arrivee__gte = date_1, date_arrivee__lte = date_2)
+        elif date_1 and not date_2:
+            qs = qs.filter(date_arrivee = date_1)
+        elif not date_1 and date_2:
+            qs = qs.filter(date_arrivee = date_2)
+        return qs.order_by('-date_arrivee')
 
     def get_context_data(self, *args,**kwargs):
         context = super(RequestSummary, self).get_context_data(*args, **kwargs)
-        if self.kwargs['activite'] == 'occas':
-            context['title'] = 'ETAT DES VOLS OCCASIONNELS'
+        context['act'] = self.kwargs['activite']
+        context['etat_du_vol'] = FLIGHT_STATUS
+        context['nature'] = NATURE
+        context['escales'] = list(ESCALES.objects.all())
+        if 'qs' in self.kwargs:
+            if self.kwargs['qs'] == 'awaiting-billing':
+                context['qs'] = self.kwargs['qs']
         else:
-            context['title'] = 'ETAT DES VOLS Réguliers'.upper()
+            context['qs'] = None
+        if self.request.GET.get('etat_du_vol') and self.request.GET.get('etat_du_vol') != 'all':
+            context['filter_etat'] = self.request.GET.get('etat_du_vol')
+        if self.request.GET.get('nature_touchee') and self.request.GET.get('nature_touchee') != 'all':
+            context['filter_nature'] = self.request.GET.get('nature_touchee')
+        if self.request.GET.get('escale') and self.request.GET.get('escale') != 'all':
+            context['filter_escale'] = self.request.GET.get('escale')
+        if self.request.GET.get('compagnie_dispatcher') and self.request.GET.get('compagnie_dispatcher') != 'all':
+            context['filter_cmp'] = self.request.GET.get('compagnie_dispatcher')
+        if self.request.GET.get('fiche_received') and self.request.GET.get('fiche_received') != 'all':
+            context['filter_fiche_rec'] = self.request.GET.get('fiche_received')
+        if self.request.GET.get('fiche_phys_received') and self.request.GET.get('fiche_phys_received') != 'all':
+            context['filter_fiche_phys_received'] = self.request.GET.get('fiche_phys_received')
+        if self.request.GET.get('date_arrivee_1') and self.request.GET.get('date_arrivee_1') != '':
+            context['filter_date_arrivee_1'] = datetime.datetime.strptime(self.request.GET.get('date_arrivee_1'), '%Y-%m-%d')
+        if self.request.GET.get('date_arrivee_2') and self.request.GET.get('date_arrivee_2') != '':
+            context['filter_date_arrivee_2'] = datetime.datetime.strptime(self.request.GET.get('date_arrivee_2'), '%Y-%m-%d')
+        if self.kwargs['activite'] == 'occas':
+            if 'qs' in self.kwargs:
+                if self.kwargs['qs'] == 'awaiting-billing':
+                    context['title'] = 'état des vols occasionnels non encore facturés'.upper()
+                else:
+                    context['title'] = 'les vols occasionnels programmés'.upper()
+            else:
+                context['title'] = 'éTAT DES VOLS OCCASIONNELS'.upper()
+            context['companies'] = list(COMP_DISPATCHER.objects.filter(activite = 'OCCASIONNEL'))
+        else:
+            if 'qs' in self.kwargs:
+                if self.kwargs['qs'] == 'awaiting-billing':
+                    context['title'] = 'etat des vols réguliers non encore facturés'.upper()
+                else:
+                    context['title'] = 'les vols réguliers prévus pour aujourd\'hui - '.upper() + str(datetime.datetime.now().date())
+            else:
+                context['title'] = 'éTAT DES VOLS réguliers'.upper()
+            context['companies'] = list(COMP_DISPATCHER.objects.filter(activite = 'CONTRACTUEL'))
         return context
 
 class FlightOccas(DetailView):
@@ -446,28 +547,29 @@ def valid_date(request):
                         dt = datetime.datetime.strptime(request.POST.get('act_dte_dep'), '%Y-%m-%d').date()
                         if datetime.datetime.combine(dt, time_in) > datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S'):
                             etat = True
-                    if request.POST.get('sta') == request.POST.get('actual') and request.POST.get('sta') != '':
-                        dt = datetime.datetime.strptime(request.POST.get('date_arrivee'), '%Y-%m-%d').date()
-                        if datetime.datetime.combine(dt, time_in) < datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S'):
-                            etat = True
-                    if request.POST.get('std') == request.POST.get('actual') and request.POST.get('std') != '':
-                        dt = datetime.datetime.strptime(request.POST.get('date_depart'), '%Y-%m-%d').date()
-                        if datetime.datetime.combine(dt, time_in) < datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S'):
-                            etat = True
+                    # if request.POST.get('sta') == request.POST.get('actual') and request.POST.get('sta') != '':
+                    #     dt = datetime.datetime.strptime(request.POST.get('date_arrivee'), '%Y-%m-%d').date()
+                    #     if datetime.datetime.combine(dt, time_in) < datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S'):
+                    #         etat = True
+                    # if request.POST.get('std') == request.POST.get('actual') and request.POST.get('std') != '':
+                    #     dt = datetime.datetime.strptime(request.POST.get('date_depart'), '%Y-%m-%d').date()
+                    #     if datetime.datetime.combine(dt, time_in) < datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S'):
+                    #         etat = True
                 else:
                     date_in = datetime.datetime.strptime(request.POST.get('actual'), '%Y-%m-%d').date()
                     # print(date_in)
                     if datetime_check and date_check:
                         # print(request.user.profile.poste, datetime.datetime.combine(arr, ata))
-                        if request.user.profile.poste != 'CHEF D\'ESCALE' and (datetime.datetime.combine(arr, sta) < timezone.now() or datetime.datetime.combine(dep, std) < timezone.now()):
-                            etat = True
-                        elif request.user.profile.poste == 'CHEF D\'ESCALE' and (datetime.datetime.combine(arr, ata) > timezone.now() or datetime.datetime.combine(dep, atd) > timezone.now() or datetime.datetime.combine(arr, sta) < timezone.now() - datetime.datetime.timedelta(days=15) or datetime.datetime.combine(dep, std) < timezone.now() - datetime.datetime.timedelta(days=15)):
+                        if request.user.profile.poste == 'CHEF D\'ESCALE' and (datetime.datetime.combine(arr, ata) > timezone.now() or datetime.datetime.combine(dep, atd) > timezone.now()):
+                            print('1')
                             etat = True
                     if request.POST.get('demande') == 'true':
                         if date_in > timezone.now().date() or date_in < timezone.now().date() - datetime.timedelta(days=8):
+                            print('2')
                             etat = True
                     else:
-                        if (request.user.profile.poste != 'CHEF D\'ESCALE' and date_in < timezone.now().date()) or (request.user.profile.poste == 'CHEF D\'ESCALE' and (date_in > timezone.now().date() or (date_in < timezone.now().date() - datetime.timedelta(days=15) or date_in < timezone.now().date() - datetime.timedelta(days=15)) ) ):
+                        if (request.user.profile.poste == 'CHEF D\'ESCALE' and (date_in > timezone.now().date() or (date_in < timezone.now().date() - datetime.timedelta(days=15) or date_in < timezone.now().date() - datetime.timedelta(days=15)) ) ):
+                            print('3')
                             etat = True
             # print('date check : ' + str(date_check))
 
@@ -554,7 +656,7 @@ def valid_fiche(request):
                     msg = 'La fiche N° ' + str(fiche) + ' n\'existe pas pour cette escale !'
                 else:
                     obj = FICHE_TOUCHEE.objects.get(n_fiche=fiche)
-                    if obj.status == 'CONSOMMé'.upper() or obj.status == 'ANNULE':
+                    if obj.status == 'CONSOMME'.upper() or obj.status == 'ANNULE':
                         get = True
                         if plage:
                             msg = 'Interval de fiches incorrect ! La fiche N° ' + str(fiche) + ' n\'est plus disponible !'
@@ -695,13 +797,15 @@ class AddVolOccas(View):
         if request.POST.get('n_field') != '0':
             obj = FLIGHT_ASSIST.objects.get(n_field=request.POST.get('n_field'))
             if obj.n_facture is None and 'n_facture' in dic and dic['n_facture'] is not None and (dic['etat_du_vol'] == 'OPERE' or dic['etat_du_vol'] == 'ANNULE'):
+                print('1er')
                 obj.n_facture = dic['n_facture']
                 obj.reponse = True
                 obj.save()
-                return HttpResponseRedirect(reverse('core:request-summary', kwargs={
-                            'activite': 'contrat'
+                return HttpResponseRedirect(reverse('core:flight-detail', kwargs={
+                            'slug': obj.slug
                         }))
             if obj.tarif_de_base is None and 'tarif_de_base' in dic and (dic['tarif_de_base'] != '0' or dic['extra_service'] != '0'):
+                print('2e')
                 obj = FLIGHT_ASSIST.objects.get(n_field=request.POST.get('n_field'))
                 obj.tarif_de_base = float(dic['tarif_de_base'])
                 obj.majoration = float(dic['majoration'])
@@ -718,7 +822,9 @@ class AddVolOccas(View):
                 prc_totale = (obj.majoration + obj.retard + obj.annulation) - obj.reduction
                 montant = obj.tarif_de_base * (1 + (prc_totale / 100)) + obj.extra_service
                 # EXCHANGE
-                echg = EXCHANGE.objects.get(status='actual')
+                echg = EXCHANGE.objects.exclude(status='actual').filter(date_begin__lte = obj.act_dte_arr, date_end__gte = obj.act_dte_arr).first()
+                if echg is None:
+                    echg = EXCHANGE.objects.get(status='actual')
                 if obj.monnaie == 'USD':
                     obj.montant_globale = round(montant, 2)
                     obj.dzd = round(obj.montant_globale * float(echg.dzd), 2)
@@ -739,6 +845,7 @@ class AddVolOccas(View):
                     'slug': obj.slug
                 }))
             if 'tarif_de_base' in dic and (str(obj.tarif_de_base) != dic['tarif_de_base'] or str(obj.extra_service) != dic['extra_service'] or str(obj.reduction) != dic['reduction'] or str(obj.retard) != dic['retard'] or str(obj.annulation) != dic['annulation'] or str(obj.major_night) != dic['major_night'] or str(obj.major_jourferie) != dic['major_jourferie'] or str(obj.major_standby) != dic['major_standby'] or str(obj.major_weekend) != dic['major_weekend'] or str(obj.majoration) != dic['majoration']):
+                print('3e')
                 obj, created = FLIGHT_ASSIST.objects.update_or_create(
                     n_field=request.POST.get('n_field'),
                     defaults = dic,
@@ -758,7 +865,9 @@ class AddVolOccas(View):
                 prc_totale = (obj.majoration + obj.retard + obj.annulation) - obj.reduction
                 montant = obj.tarif_de_base * (1 + (prc_totale / 100)) + obj.extra_service
                 # EXCHANGE
-                echg = EXCHANGE.objects.get(status='actual')
+                echg = EXCHANGE.objects.exclude(status='actual').filter(date_begin__lte = obj.act_dte_arr, date_end__gte = obj.act_dte_arr).first()
+                if echg is None:
+                    echg = EXCHANGE.objects.get(status='actual')
                 if obj.monnaie == 'USD':
                     obj.montant_globale = round(montant, 2)
                     obj.dzd = round(obj.montant_globale * float(echg.dzd), 2)
@@ -787,15 +896,22 @@ class AddVolOccas(View):
                     sum = 0
                     if obj.company.monnaie == 'EUR':
                         for row in qs:
+                            row.n_facture = None
+                            row.save()
                             sum += row.eur
                     elif obj.company.monnaie == 'USD':
                         for row in qs:
+                            row.n_facture = None
+                            row.save()
                             sum += row.montant_globale
                     else:
                         for row in qs:
+                            row.n_facture = None
+                            row.save()
                             sum += row.dzd
                     obj.montant = round(sum, 2)
                     obj.type_fact = 'CORRECTION'
+                    obj.n_facture = None
                     obj.user_add = request.user
                     obj.save()
                     return HttpResponseRedirect(reverse('core:fact-regular-detail', kwargs={
@@ -803,9 +919,9 @@ class AddVolOccas(View):
                     }))
                 except HISTORIQUE_REGULAR_FACT.DoesNotExist:
                     messages.success(request, 'Le vol a correctement été facturé. Veuillez renseigner le N° de la facture.')
-                    return HttpResponseRedirect(reverse('core:request-summary', kwargs={
-                                'activite': 'contrat'
-                            }))
+                    return HttpResponseRedirect(reverse('core:flight-detail', kwargs={
+                            'slug': obj.slug
+                        }))
         max_n = FLIGHT_ASSIST.objects.aggregate(Max('n_field'))
         # print(max_n)
         created = False
@@ -854,17 +970,19 @@ class AddVolOccas(View):
                 # print('DEP XX')
                 messages.error(request, 'Le créneau de départ n\'est pas disponible !')
             if not exist:
-                if 'tarif_de_base' in dic:    
-                    if dic['tarif_de_base'] == '0':
-                        dic['tarif_de_base'] = None
-                        dic['dcs'] = None
-                        dic['majoration'] = None
-                        dic['reduction'] = None
+                # if 'tarif_de_base' in dic:    
+                #     if dic['tarif_de_base'] == '0':
+                #         dic['tarif_de_base'] = None
+                #         dic['dcs'] = None
+                #         dic['majoration'] = None
+                #         dic['reduction'] = None
                 obj, created = FLIGHT_ASSIST.objects.update_or_create(
                     n_field=request.POST.get('n_field'),
                     defaults = dic,
                 )
-                if obj.montant_globale is None:
+                print(obj.montant_globale)
+                comp = COMP_DISPATCHER.objects.get(company_dispatcher = obj.compagnie_dispatcher)
+                if obj.montant_globale is None and obj.montant_prevus is None and comp.activite == 'OCCASIONNEL':
                     old_prevus = obj.montant_prevus
                     obj.montant_prevus = get_montant_prevus(obj)
                     print(obj.montant_prevus)
@@ -898,14 +1016,40 @@ class AddVolOccas(View):
                     obj.tarif_de_base = montant
                     major_cnl = get_penalite_cnl(obj)
                     obj.annulation = major_cnl
-                    obj.montant_globale = round(montant * (major_cnl / 100), 2)
+                    print(montant, major_cnl)
+                    obj.montant_globale = round(montant * (1 + (major_cnl / 100)), 2)
+                    obj.extra_service = 0
+                    obj.major_night = 0
+                    obj.major_jourferie = 0
+                    obj.major_standby = 0
+                    obj.major_weekend = 0
+                    obj.major_abs_demande = 0
+                    obj.majoration = 0
+                    obj.retard = 0
+                    obj.reduction = 0
                     # CURRENCY EXCHANGE
+                    echg = EXCHANGE.objects.exclude(status='actual').filter(date_begin__lte = obj.date_arrivee, date_end__gte = obj.date_arrivee).first()
+                    if echg is None:
+                        echg = EXCHANGE.objects.get(status='actual')
+                    montant = obj.montant_globale
+                    if obj.monnaie == 'USD':
+                        obj.montant_globale = round(montant, 2)
+                        obj.dzd = round(obj.montant_globale * float(echg.dzd), 2)
+                        obj.eur = round(obj.montant_globale * float(echg.eur), 2)
+                    elif obj.monnaie == 'EUR':
+                        obj.eur = round(montant, 2)
+                        obj.montant_globale = round(obj.eur / float(echg.eur), 2)
+                        obj.dzd = round(obj.montant_globale * float(echg.dzd), 2)
+                    else:
+                        obj.dzd = round(montant, 2)
+                        obj.montant_globale = round(obj.eur / float(echg.dzd), 2)
+                        obj.eur = round(obj.montant_globale * float(echg.eur), 2)
                     # Where USD is the base currency you want to use
-                    url = 'https://v6.exchangerate-api.com/v6/86fd92bcca154241892eb414/latest/USD'
+                    # url = 'https://v6.exchangerate-api.com/v6/86fd92bcca154241892eb414/latest/USD'
                     # Making our request
-                    response = requests.get(url)
-                    data = response.json()
-                    obj.dzd = round(obj.montant_globale * float(data['conversion_rates']['DZD']), 2)
+                    # response = requests.get(url)
+                    # data = response.json()
+                    # obj.dzd = round(obj.montant_globale * float(data['conversion_rates']['DZD']), 2)
                     obj.save()
                     # MAJ DU SOLDE DE LA COMPAGNIE
                     comp = COMP_DISPATCHER.objects.get(company_dispatcher=obj.compagnie_dispatcher)
@@ -914,7 +1058,9 @@ class AddVolOccas(View):
                         comp.save()
                     obj.user_last_edit = request.user.first_name + ' ' + request.user.last_name
                     obj.save()
-                    return redirect('core:request-summary')
+                    return HttpResponseRedirect(reverse('core:flight-detail', kwargs = {
+                                'slug' : obj.slug
+                            }))
                 elif obj.date_cnl is not None:
                     comp = COMP_DISPATCHER.objects.get(company_dispatcher=obj.compagnie_dispatcher)
                     comp.solde += obj.montant_globale
@@ -932,23 +1078,64 @@ class AddVolOccas(View):
                 }))
         obj.user_last_edit = request.user.first_name + ' ' + request.user.last_name
         obj.save()
-        if obj.montant_globale is not None:
+        if 'major_abs_demande' not in dic:
+            dic['major_abs_demande'] = obj.major_abs_demande
+        if obj.montant_globale is not None and (obj.montant_globale != dic['montant_globale'] or obj.tarif_de_base != dic['tarif_de_base'] or obj.extra_service != dic['extra_service'] or obj.major_night != dic['major_night'] or obj.major_weekend != dic['major_weekend'] or obj.major_jourferie != dic['major_jourferie'] or obj.major_standby != dic['major_standby'] or obj.major_abs_demande != dic['major_abs_demande'] or obj.major_abs_demande != dic['major_abs_demande'] or obj.majoration != dic['majoration'] or obj.reduction != dic['reduction'] or obj.retard != dic['retard'] or obj.annulation != dic['annulation'] ):
             return HttpResponseRedirect(reverse('core:facturation-occas', kwargs={
                 'n_field': obj.n_field
             }))
-        return redirect('core:home-view')
+        return HttpResponseRedirect(reverse('core:flight-detail', kwargs={
+                    'slug': obj.slug
+                }))
 
 class agent_flight_summary(ListView):
     paginate_by = 20
     template_name = 'core/agent_summary.html'
 
     def get_queryset(self):
-        return FLIGHT_ASSIST.objects.filter(escale=self.request.user.profile.escale.escale).exclude(etat_du_vol__in = ['ANNULE', 'NO OP']).exclude(etat_du_vol = 'OPERE', ata__isnull = False).order_by('-date_demande')
+        if self.kwargs['activite'] == 'occas':
+            comp = COMP_DISPATCHER.objects.filter(activite='OCCASIONNEL').values_list('company_dispatcher')
+            qs = FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = comp)
+        else:
+            comp = COMP_DISPATCHER.objects.filter(activite='CONTRACTUEL').values_list('company_dispatcher')
+            qs = FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = comp)
+        if self.request.GET.get('compagnie_dispatcher') and self.request.GET.get('compagnie_dispatcher') != 'all':
+            qs = qs.filter(compagnie_dispatcher = self.request.GET.get('compagnie_dispatcher'))
+        if self.request.GET.get('date_arrivee_1') and self.request.GET.get('date_arrivee_1') != '':
+            date_1 = datetime.datetime.strptime(self.request.GET.get('date_arrivee_1'), '%Y-%m-%d')
+        else:
+            date_1 = None
+        if self.request.GET.get('date_arrivee_2') and self.request.GET.get('date_arrivee_2') != '':
+            date_2 = datetime.datetime.strptime(self.request.GET.get('date_arrivee_2'), '%Y-%m-%d')
+        else:
+            date_2 = None
+        if date_1 and date_2:
+            qs = qs.filter(date_arrivee__gte = date_1, date_arrivee__lte = date_2)
+        elif date_1 and not date_2:
+            qs = qs.filter(date_arrivee = date_1)
+        elif not date_1 and date_2:
+            qs = qs.filter(date_arrivee = date_2)
+        return qs.filter(escale=self.request.user.profile.escale.escale).exclude(etat_du_vol__in = ['ANNULE', 'NO OP']).exclude(etat_du_vol = 'OPERE', ata__isnull = False).order_by('-date_arrivee')
 
     def get_context_data(self, *args,**kwargs):
         context = super(agent_flight_summary, self).get_context_data(*args, **kwargs)
         esc = ESCALES.objects.get(escale=self.request.user.profile.escale.escale)
-        context['title'] = 'LISTE DES VOLS à COMPLETER - ESCALE : '.upper() + esc.full_name
+        context['act'] = self.kwargs['activite']
+        context['etat_du_vol'] = FLIGHT_STATUS
+        context['nature'] = NATURE
+        if context['act'] == 'occas':
+            vols = 'OCCASIONNELS'
+            context['companies'] = list(COMP_DISPATCHER.objects.filter(activite = 'OCCASIONNEL'))
+        else:
+            vols = 'Réguliers'.upper()
+            context['companies'] = list(COMP_DISPATCHER.objects.filter(activite = 'CONTRACTUEL'))
+        context['title'] = 'LISTE DES VOLS ' + vols + ' à COMPLETER - ESCALE : '.upper() + esc.full_name
+        if self.request.GET.get('compagnie_dispatcher') and self.request.GET.get('compagnie_dispatcher') != 'all':
+            context['filter_cmp'] = self.request.GET.get('compagnie_dispatcher')
+        if self.request.GET.get('date_arrivee_1') and self.request.GET.get('date_arrivee_1') != '':
+            context['filter_date_arrivee_1'] = datetime.datetime.strptime(self.request.GET.get('date_arrivee_1'), '%Y-%m-%d')
+        if self.request.GET.get('date_arrivee_2') and self.request.GET.get('date_arrivee_2') != '':
+            context['filter_date_arrivee_2'] = datetime.datetime.strptime(self.request.GET.get('date_arrivee_2'), '%Y-%m-%d')
         return context
 
 class post_vol(DetailView):
@@ -969,7 +1156,7 @@ class post_vol(DetailView):
 class validReleveTouchee(View):
     def post(self, request):
         dic = dict(request.POST)
-        # print(request.POST)
+        print(request.POST)
         del dic['csrfmiddlewaretoken']
         dic_values = dic.items()
         for key, value in dic_values:
@@ -1004,38 +1191,44 @@ class validReleveTouchee(View):
             else:
                 L.append(fiche_1)
         fiches = [int(x) for x in L if x is not None]
-        if request.FILES['fiche_touchee_file']:
+        print('fiche_touchee_file' in request.FILES)
+        if 'fiche_touchee_file' in request.FILES:
             myfile = request.FILES['fiche_touchee_file']
             print(myfile.name, myfile.size)
             dic['fiche_touchee_file'] = myfile
+        else:
+            dic['fiche_touchee_file'] = None
         obj, created = FLIGHT_ASSIST.objects.update_or_create(
             n_field=request.POST.get('n_field'),
             defaults = dic
         )
+        # print('A' + obj.fiche_touchee_file.name + 'A')
         obj.user_last_edit = request.user.first_name + ' ' + request.user.last_name
         obj.etat_du_vol = 'OPERE'
-        if obj.fiche_touchee_file.name is not None:
+        if obj.fiche_touchee_file.name is not None :
             obj.fiche_received = True
+        else:
+            obj.fiche_received = False
         print(obj.fiche_touchee_file, type(obj.fiche_touchee_file))
         obj.save()
         # FICHES CONSOMMEES ET ANNULEES
-        print(fiches, fiches[0])
+        # print(fiches, fiches[0])
         f = FICHE_TOUCHEE.objects.get(n_fiche=int(fiches[0]))
-        f.status = 'CONSOMMÉ'
+        f.status = 'CONSOMME'
         f.key_flt = obj
         f.key_flt.key_flt = obj.key_flt.replace('-', '')
         f.save()
         fiches.pop(0)
         for fiche in fiches:
             f = FICHE_TOUCHEE.objects.get(n_fiche=int(fiche))
-            print(fiche)
+            # print(fiche)
             f.status = 'ANNULE'
             f.cnl_cause_fiche = request.POST.get('cnl_cause_fiche')
             f.save()
-            print('END//')
+            # print('END//')
         comp = COMP_DISPATCHER.objects.get(company_dispatcher=obj.compagnie_dispatcher)
-        if comp.activite == 'CONTRACTUEL':
-            return redirect('core:agent-summary')
+        # if comp.activite == 'CONTRACTUEL':
+        #     return redirect('core:agent-summary')
         return HttpResponseRedirect(reverse('core:facturation-occas', kwargs={
             'n_field': obj.n_field
         }))
@@ -1073,19 +1266,21 @@ def facturation_occas(request, n_field):
     #     obj.montant_globale = round(montant * float(data['conversion_rates']['EUR']), 2)
     # else:
     #     obj.montant_globale = round(montant, 2)
-    dzd_exch = EXCHANGE.objects.get(status='actual')
+    dzd_exch = EXCHANGE.objects.exclude(status='actual').filter(date_begin__lte = obj.date_arrivee, date_end__gte = obj.date_arrivee).first()
+    if dzd_exch is None:
+        dzd_exch = EXCHANGE.objects.get(status='actual')
     if obj.monnaie == 'USD':
         obj.montant_globale = round(montant, 2)
-        obj.dzd = round(obj.montant_globale * float(echg.dzd), 2)
-        obj.eur = round(obj.montant_globale * float(echg.eur), 2)
+        obj.dzd = round(obj.montant_globale * float(dzd_exch.dzd), 2)
+        obj.eur = round(obj.montant_globale * float(dzd_exch.eur), 2)
     elif obj.monnaie == 'EUR':
         obj.eur = round(montant, 2)
-        obj.montant_globale = round(obj.eur / float(echg.eur), 2)
-        obj.dzd = round(obj.montant_globale * float(echg.dzd), 2)
+        obj.montant_globale = round(obj.eur / float(dzd_exch.eur), 2)
+        obj.dzd = round(obj.montant_globale * float(dzd_exch.dzd), 2)
     else:
         obj.dzd = round(montant, 2)
-        obj.montant_globale = round(obj.eur / float(echg.dzd), 2)
-        obj.eur = round(obj.montant_globale * float(echg.eur), 2)
+        obj.montant_globale = round(obj.eur / float(dzd_exch.dzd), 2)
+        obj.eur = round(obj.montant_globale * float(dzd_exch.eur), 2)
     obj.save()
     # MAJ DU SOLDE DE LA COMPAGNIE
     comp = COMP_DISPATCHER.objects.get(company_dispatcher=obj.compagnie_dispatcher)
@@ -1094,7 +1289,13 @@ def facturation_occas(request, n_field):
         comp.save()
     messages.success(request, 'Facturation effectué avec succès.')
     if request.user.profile.poste == 'CHEF D\'ESCALE':
-        return redirect('core:agent-summary')
+        if comp.activite == 'OCCASIONNEL':
+            act = 'occas'
+        else:
+            act = 'contrat'
+        return redirect(reverse('core:agent-summary', kwargs = {
+            'activite' : act
+        }))
     else:
         return HttpResponseRedirect(reverse('core:flight-detail', kwargs={
             'slug': obj.slug
@@ -1198,12 +1399,23 @@ class CompanyDetail(DetailView):
         # context['flight_fi'] = FLIGHT_FI.objects.only('key_flt')
         return context
 
-def price_list(request):
+def price_list_actual(request):
     context = {
-        'obj' : TARIF_OCCAS.objects.get(status='actual'),
-        'title' : 'LA PRICE LIST DES VOLS OCCASIONNELS      —    ' + str(timezone.now().year)
+        'obj': TARIF_OCCAS.objects.get(status='actual'),
+        'title': 'LA PRICE LIST DES VOLS OCCASIONNELS      —    ' + str(timezone.now().year),
+        'hist': True,
     }
     return render(request, 'core/price_list.html', context)
+
+class price_list(DetailView):
+    model = TARIF_OCCAS
+    template_name = 'core/price_list.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(price_list, self).get_context_data(*args, **kwargs)
+        context['obj'] = TARIF_OCCAS.objects.get(auto_id = self.kwargs['pk'])
+        context['title'] = 'LA PRICE LIST DES VOLS OCCASIONNELS      —    ' + str(timezone.now().year)
+        return context
 
 class ValidPriceList(View):
     def post(self, request):
@@ -1212,10 +1424,11 @@ class ValidPriceList(View):
         dic_values = dic.items()
         for key, value in dic_values:
             dic[key] = value[0]
-        obj, created = TARIF_OCCAS.objects.update_or_create(
-            status='actual',
-            defaults = dic
-        )
+        old_obj = TARIF_OCCAS.objects.get(status = 'actual')
+        old_obj.status = None
+        old_obj.save()
+        obj = TARIF_OCCAS(**dic)
+        obj.status = 'actual'
         obj.user_last_edit = request.user.first_name + ' ' + request.user.last_name
         obj.save()
         messages.success(request, 'La price list a été modifié avec succès')
@@ -1231,7 +1444,7 @@ class FichesTouchee(ListView):
         return context
     
     def get_queryset(self):
-        return FICHE_TOUCHEE.objects.all()
+        return FICHE_TOUCHEE.objects.all().order_by('escale', 'n_fiche')
 
 def gestion_affect_fiches(request):
     max_fiche = list(FICHE_TOUCHEE.objects.aggregate(Max('n_fiche')).values())
@@ -1497,9 +1710,9 @@ class NewSchedule(View):
                 n_max = list(FLIGHT_ASSIST.objects.aggregate(Max('n_field')).values())[0]
                 df_out = pd.DataFrame()
                 new_df = pd.DataFrame()
-                # df = ssim_df(myfile)
+                df = ssim_df(myfile)
                 # df.to_csv('myfile.csv')
-                df = pd.read_csv('myfile.csv')
+                # df = pd.read_csv('myfile.csv')
                 # GET ONLY DZ
                 df = df.loc[(df['Departure_Station'].isin(escales)) | (df['Arrival_Station'].isin(escales))]
                 # GET DATE DEMANDE FROM SSIM_PERIOD COLUMN
@@ -1514,7 +1727,10 @@ class NewSchedule(View):
                 for idx, row_copy in df.iterrows():
                     row = df_out.loc[idx]
                     if row.next_idx is not None:
-                        oneline_df = df_out.loc[ (df_out['next_idx'].values == 'x') & (idx != df_out.index[-1]) & (df_out['Departure_Station'].values == row['Arrival_Station']) & (df_out['Flight_Number'].str[0:3] == row['Flight_Number'][0:3]) & (df_out['STD_UTC'].astype(int).values > row['STD_UTC']) ]
+                        print(df_out['Departure_Station'].values)
+                        print('\n')
+                        print(row['Arrival_Station'])
+                        oneline_df = df_out.loc[ (df_out['next_idx'].values == 'x') & (idx != df_out.index[-1]) & (df_out['Departure_Station'].values == row['Arrival_Station']) & (df_out['Flight_Number'].str[0:3] == row['Flight_Number'][0:3]) & (df_out['STD_UTC'].astype(int).values > int(row['STD_UTC'])) ]
                         if oneline_df.shape[0] > 0:
                             for oneline_idx, oneline_row in oneline_df.iterrows():
                                 row_2 = oneline_row
@@ -1532,10 +1748,19 @@ class NewSchedule(View):
                             cap = re.findall('[A-Z](\d+)', str(arr_row['Aircraft_Configuration']))
                             cap = [int(i) for i in cap]
                             capacite = sum(cap)
-                            # GET KEY FLIGHT - KEY_FLT
+                            # GET KEY FLIGHT - KEY_FLT 211204
                             date_arr = str(arr_row['arrival_date'])
-                            date_arr = date_arr.replace('-', '').replace('2021', '21')
+                            date_arr = date_arr.replace('-', '')
+                            date_arr = date_arr[2:]
+                            # x = re.search("20(\d{2})", date_arr.replace('-', ''))
+                            # date_arr = date_arr.replace('-', '').replace('2021', '21')
                             date_arr = date_arr[4:] + date_arr[2:4] + date_arr[:2]
+                            try:
+                                arr_row['Flight_Number'] = str(int(arr_row['Flight_Number']))
+                                if len(arr_row['Flight_Number']) < 4:
+                                    arr_row['Flight_Number'] = '0' + str(arr_row['Flight_Number'])
+                            except ValueError:
+                                arr_row['Flight_Number'] = arr_row['Flight_Number'].replace('-', '')
                             key_flt = date_arr + arr_row['Flight_Number'].replace('-', '') + arr_row['Arrival_Station'] + arr_row['Departure_Station']
                             # CONVERT TIME
                             sta = '0' + str(arr_row['STA_UTC']) if len(str(arr_row['STA_UTC'])) < 4 else str(arr_row['STA_UTC'])
@@ -1650,9 +1875,9 @@ def valid_company_fact(request):
             until_bool = False
             comp = request.POST.get('compagnie_dispatcher')
             esc = ESCALES.objects.get(escale=request.POST.get('escale'))
-            if 'compagnie_dispatcher' in request.POST and request.POST.get('compagnie_dispatcher') != '':
+            if 'compagnie_dispatcher' in request.POST and request.POST.get('compagnie_dispatcher') != 'all':
                 comp_obj = COMP_DISPATCHER.objects.get(company_dispatcher = request.POST.get('compagnie_dispatcher'))
-            if request.POST.get('compagnie_dispatcher') != '':
+            if request.POST.get('compagnie_dispatcher') != 'all':
                 try:
                     last_date_from = HISTORIQUE_REGULAR_FACT.objects.filter(company=request.POST.get('compagnie_dispatcher'), escale=esc).latest('date_last_add').from_date.strftime('%d/%m/%Y')
                     last_date_until = HISTORIQUE_REGULAR_FACT.objects.filter(company=request.POST.get('compagnie_dispatcher'), escale=esc).latest('date_last_add').until_date.strftime('%d/%m/%Y')
@@ -1859,17 +2084,77 @@ def build_chart(request):
 class HistRegularFact(ListView):
     template_name = 'core/hist_regular_fact.html'
     model = HISTORIQUE_REGULAR_FACT
-    paginate_by = 30
-    ordering = ['-date_last_add']
 
     def get_context_data(self, *args,**kwargs):
         context = super(HistRegularFact, self).get_context_data(*args, **kwargs)
         context['title'] = 'HISTORIQUE DES FACTURATIONS DES COMPAGNIES à VOLS RéGULIERS'.upper()
+        context['companies'] = list(COMP_DISPATCHER.objects.filter(activite = 'CONTRACTUEL'))
+        context['escales'] = list(ESCALES.objects.all())
+        context['users'] = list(HISTORIQUE_REGULAR_FACT.objects.all().distinct('user_add'))
+        users = []
+        for item in context['users']:
+            users.append(item.user_add.last_name + ' ' + item.user_add.first_name)
+        context['users'] = users
+        # QUERYSET
+        if self.request.GET.get('company') and self.request.GET.get('company') != 'all':
+            context['filter_cmp'] = self.request.GET.get('company')
+        if self.request.GET.get('escale') and self.request.GET.get('escale') != 'all':
+            context['filter_escale'] = self.request.GET.get('escale')
+        if self.request.GET.get('users') and self.request.GET.get('users') != 'all':
+            context['filter_users'] = self.request.GET.get('users')
+        if self.request.GET.get('from_date') and self.request.GET.get('from_date') != '':
+            context['filter_from_date'] = datetime.datetime.strptime(self.request.GET.get('from_date'), '%Y-%m-%d')
+        if self.request.GET.get('until_date') and self.request.GET.get('until_date') != '':
+            context['filter_until_date'] = datetime.datetime.strptime(self.request.GET.get('until_date'), '%Y-%m-%d')
+        if self.request.GET.get('date_last_add_1') and self.request.GET.get('date_last_add_1') != '':
+            context['filter_date_last_add_1'] = datetime.datetime.strptime(self.request.GET.get('date_last_add_1'), '%Y-%m-%d')
+        if self.request.GET.get('date_last_add_2') and self.request.GET.get('date_last_add_2') != '':
+            context['filter_date_last_add_2'] = datetime.datetime.strptime(self.request.GET.get('date_last_add_2'), '%Y-%m-%d')
         return context
+    
+    def get_queryset(self):
+        # QUERYSET
+        qs = HISTORIQUE_REGULAR_FACT.objects.all()
+        if self.request.GET.get('company') and self.request.GET.get('company') != 'all':
+            qs = qs.filter(company = self.request.GET.get('company'))
+        if self.request.GET.get('escale') and self.request.GET.get('escale') != 'all':
+            qs = qs.filter(escale = self.request.GET.get('escale'))
+        if self.request.GET.get('users') and self.request.GET.get('users') != 'all':
+            usr = User.objects.get(last_name = self.request.GET.get('users').split(' ')[0], first_name = self.request.GET.get('users').split(' ')[1])
+            qs = qs.filter(user_add = usr)
+        if self.request.GET.get('from_date') and self.request.GET.get('from_date') != '':
+            date_1 = datetime.datetime.strptime(self.request.GET.get('from_date'), '%Y-%m-%d')
+        else:
+            date_1 = None
+        if self.request.GET.get('until_date') and self.request.GET.get('until_date') != '':
+            date_2 = datetime.datetime.strptime(self.request.GET.get('until_date'), '%Y-%m-%d')
+        else:
+            date_2 = None
+        if date_1 and date_2:
+            qs = qs.filter((Q(from_date__lte = date_1) & Q(until_date__gte = date_1)) | (Q(from_date__lte = date_2) & Q(until_date__gte = date_2)))
+        elif date_1 and not date_2:
+            qs = qs.filter(from_date__lte = date_1, until_date__gte = date_1)
+        elif not date_1 and date_2:
+            qs = qs.filter(from_date__lte = date_2, until_date__gte = date_2)
+        if self.request.GET.get('date_last_add_1') and self.request.GET.get('date_last_add_1') != '':
+            date_1 = datetime.datetime.strptime(self.request.GET.get('date_last_add_1'), '%Y-%m-%d')
+        else:
+            date_1 = None
+        if self.request.GET.get('date_last_add_2') and self.request.GET.get('date_last_add_2') != '':
+            date_2 = datetime.datetime.strptime(self.request.GET.get('date_last_add_2'), '%Y-%m-%d')
+        else:
+            date_2 = None
+        if date_1 and date_2:
+            qs = qs.filter(date_last_add__gte = date_1, date_last_add__lte = date_2)
+        elif date_1 and not date_2:
+            qs = qs.filter(date_last_add__date = date_1)
+        elif not date_1 and date_2:
+            qs = qs.filter(date_last_add__date = date_2)
+        return qs.order_by('-date_last_add')
             
 class validFactRegular(View):
     def post(self, request):
-        print(request.POST)
+        # print(request.POST)
         hist_bill = HISTORIQUE_REGULAR_FACT.objects.create(
             escale = ESCALES.objects.get(escale=request.POST.get('escale')),
             company = COMP_DISPATCHER.objects.get(company_dispatcher=request.POST.get('compagnie_dispatcher')),
@@ -1912,7 +2197,8 @@ class FactRegularDetail(DetailView):
             context['type_fact'] = obj.type_fact
         else:
             context['type_fact'] = None
-        context['object_list'] = qs
+        context['fact'] = obj.n_facture
+        context['slug'] = obj.slug
         context['qs_count'] = qs.count()
         context['companies'] = BLANK_CHOICE_DASH + list(COMP_DISPATCHER.objects.filter(activite = 'CONTRACTUEL').order_by('company_dispatcher'))
         context['escales'] = BLANK_CHOICE_DASH + list(ESCALES.objects.all().order_by('full_name'))
@@ -1922,8 +2208,23 @@ class FactRegularDetail(DetailView):
         comp = COMP_DISPATCHER.objects.get(company_dispatcher = context['company'])
         context['esc'] = obj.escale.full_name
         context['title'] = 'Facturation - COMPAGNIE : '.upper() + comp.company_dispatcher
-        context['monnaie'] = comp.monnaie            
+        context['monnaie'] = comp.monnaie   
+        context['object_list'] = qs        
         return context
+
+class fact_regular_bill(View):
+    def post(self, request, id):
+        _id = self.kwargs['id']
+        obj = HISTORIQUE_REGULAR_FACT.objects.get(slug = slugify(_id))
+        obj.n_facture = request.POST.get('n_facture')
+        obj.save()
+        qs = FLIGHT_ASSIST.objects.filter(escale = obj.escale.escale, act_dte_arr__isnull = False, compagnie_dispatcher = obj.company.company_dispatcher, act_dte_arr__gte = obj.from_date, act_dte_arr__lte = obj.until_date)
+        for flt in qs:
+            flt.n_facture = request.POST.get('n_facture')
+            flt.save()
+        return HttpResponseRedirect(reverse('core:fact-regular-detail', kwargs={
+                'slug': obj.slug
+            }))
 
 class HistOPCompany(ListView):
     template_name = 'core/hist_op_company.html'
@@ -1967,15 +2268,6 @@ class luggage_view(ListView):
         else:
             context['title'] = 'ANNUAIRE DES DPR'
             context['type'] = 'DPR'
-        if self.kwargs['opt'] != 'ohd':
-            context['ind'] = BAG_HIST_INDEMN.objects.filter(suivi = context['obj']).order_by('-_id').first()
-            if context['ind']:
-                if context['ind'].monnaie is None:
-                    context['amount'] = None
-                elif context['ind'].monnaie == 'DZD':
-                    context['amount'] = context['ind'].montant_dzd
-                else:
-                    context['amount'] = context['ind'].montant_usd
         return context
 
 context = {
@@ -2219,16 +2511,58 @@ class validBagCase(View):
             obj.save()
             # print(dic_bag)
             indemn_obj = BAG_HIST_INDEMN.objects.filter(suivi = obj).order_by('-_id').first()
+            _id = '0'
+            print(subs_obj.dte_sign)
             if 'montant_dzd' in dic and indemn_obj.dte_prop is None:
                 indemn_obj.dte_prop = datetime.datetime.now().date()
                 indemn_obj.monnaie = dic['monnaie']
+                echg = EXCHANGE.objects.get(status='actual')
                 if indemn_obj.monnaie == 'USD':
                     indemn_obj.montant_usd = float(dic['montant_dzd'])
                     # MAKE EXCHANGE HERE ( IATA RATES )
+                    indemn_obj.montant_dzd = round(indemn_obj.montant_usd * echg.dzd, 2)
                 else:
                     indemn_obj.montant_dzd = float(dic['montant_dzd'])
+                    indemn_obj.montant_usd = round(indemn_obj.montant_dzd / echg.dzd, 2)
                 indemn_obj.save()
                 _id = obj._id
+            elif 'accord' in dic and indemn_obj.accord is None:
+                indemn_obj.accord = dic['accord']
+                indemn_obj.save()
+                if not indemn_obj.accord:
+                    indemn_obj = BAG_HIST_INDEMN.objects.create(
+                        suivi = subs_obj,
+                        dte_prop = None,
+                        esc_dest = subs_obj.escale_claim,
+                        monnaie = None,
+                        montant_dzd = None,
+                        montant_eur = None,
+                        montant_usd = None,
+                        accord = None
+                    )
+                    indemn_obj.save()
+                else:
+                    # BILL OTHER COMPANIES
+                    # 1. MILEAGE
+                    exch = EXCHANGE.objects.get(status='actual')
+                    if indemn_obj.monnaie != 'USD':
+                        usd_amount = round(indemn_obj.montant_dzd / exch.dzd, 2)
+                    else:
+                        usd_amount = indemn_obj.montant_usd
+                    qs = BAG_FLIGHTS.objects.filter(suivi = subs_obj)
+                    if qs.count() > 1:
+                        tot_miles = 0
+                        for flt in qs:
+                            tot_miles += flt.miles
+                        for flt in qs:
+                            prc = round((flt.miles * 100) / tot_miles, 2)
+                            flt.montant_fct = round((usd_amount * prc) / 100, 2)
+                            flt.save()
+                _id = subs_obj._id
+            elif subs_obj.payment_status:
+                subs_obj.status = 'CLOSED'
+                subs_obj.save()
+                _id = subs_obj._id
             else:
                 objs = BAG_DETAILS.objects.filter(suivi=request.POST.get('id'))
                 # print(dic_bag)
@@ -2304,12 +2638,13 @@ class BagCaseDetails(DetailView):
         context['escales'] = list(ESCALES.objects.all())
         context['rl'] = list(BAG_RL.objects.all())
         context['ind'] = BAG_HIST_INDEMN.objects.filter(suivi = context['obj']).order_by('-_id').first()
-        if context['ind'].monnaie is None:
-            context['amount'] = None
-        elif context['ind'].monnaie == 'DZD':
-            context['amount'] = context['ind'].montant_dzd
-        else:
-            context['amount'] = context['ind'].montant_usd
+        if context['ind'] is not None:
+            if context['ind'].monnaie is None:
+                context['amount'] = None
+            elif context['ind'].monnaie == 'DZD':
+                context['amount'] = context['ind'].montant_dzd
+            else:
+                context['amount'] = context['ind'].montant_usd
         return context 
 
 class HistIndemn(ListView):
@@ -2323,8 +2658,57 @@ class HistIndemn(ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(HistIndemn, self).get_context_data(*args, **kwargs)
         obj = BAG_SUIVI.objects.get(_id = self.kwargs['pk'])
-        context['title'] = 'Historique des propositions d\'indemnisation pour le dossier N° '.upper() + obj.n_file
+        context['title'] = 'Historique des propositions d\'indemnisation : ' + obj.file_type + ' N° ' + obj.n_file
         return context
+
+class AllPriceList(ListView):
+    model = TARIF_OCCAS
+    template_name = 'core/all-prices-list.html'
+
+    def get_queryset(self):
+        return TARIF_OCCAS.objects.all().order_by('-dte_begin')
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(AllPriceList, self).get_context_data(*args, **kwargs)
+        context['title'] = 'Liste des prices list enregistrées'.upper()
+        return context
+
+class ExchangeRates(ListView):
+    model = EXCHANGE
+    template_name = 'core/exchange-rates.html'
+
+    def get_queryset(self):
+        return EXCHANGE.objects.all().exclude(status='actual').order_by('-date_begin')
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ExchangeRates, self).get_context_data(*args, **kwargs)
+        context['actual'] = EXCHANGE.objects.get(status='actual')
+        context['title'] = 'Annuaire des taux d\'échanges enregistrés'.upper()
+        return context
+
+class validExchRate(View):
+    def post(self, request):
+        # print(request.POST)
+        dic = dict(request.POST)
+        del dic['csrfmiddlewaretoken']
+        print(dic)
+        dic_values = dic.items()
+        for key, value in dic_values:
+            dic[key] = value[0]
+        dic['usd'] = 1
+        obj = EXCHANGE.objects.get(status='actual')
+        obj.status = None
+        obj.date_end = datetime.datetime.now().date()
+        obj.save()
+        new = EXCHANGE(**dic)
+        new.status = 'actual'
+        new.user_last_edit = request.user.first_name + ' ' + request.user.last_name
+        new.date_begin = datetime.datetime.now().date()
+        new.save()
+        messages.success(request, 'Nouveau taux d\'échanges enregistré')
+        return redirect('core:exchange-rates')
+
+
 
 @login_required
 def valid_case(request):

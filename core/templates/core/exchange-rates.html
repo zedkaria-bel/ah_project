@@ -1,0 +1,161 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+{% load i18n %}
+
+{% block head_title %}
+Taux d'échanges
+{% endblock head_title %}
+
+
+{% block content %}
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+        <p class="mb-0 msg">{{ message }}</p>
+        <button type="button" class="close align-items-center mb-0" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="d-flex flex-row">
+    <div class="table-responsive col-8">
+        <table id="table-bag-cases" class="table table-hover" style="font-size: 10px !important; width: 100% !important;">
+            <thead class="thead-light">
+              <tr>
+                <th class="py-3" scope="col"><b class="h6">#</b></th>
+                <th class="py-3" scope="col"><b class="h6">Date d'enregistrement</b></th>
+                <th class="py-3" scope="col"><b class="h6">Date de fin</b></th>
+                <th class="py-3" scope="col"><b class="h6">Pour</b></th>
+                <th class="py-3" scope="col"><b class="h6">DZD</b></th>
+                <th class="py-3" scope="col"><b class="h6">EUR</b></th>
+                <th class="py-3" scope="col"><b class="h6">USER</b></th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+                {% for request in object_list %}
+                <tr class="row_tab" style="border-bottom: 2px #d7d7d7 solid !important;">
+                    <th class="py-4" scope="row"><b class="h6 font-weight-bold" >{{ forloop.counter }}</b></th>
+                    <th class="py-4" scope="row"><b class="h6 font-weight-bold" >{{ request.date_begin|date:'d/m/Y' }}</b></th>
+                    <th class="py-4" scope="row"><b class="h6 font-weight-bold" >
+                        {% if request.date_end is None %}
+                        -
+                        {% else %}
+                        {{ request.date_end|date:'d/m/Y' }}
+                        {% endif %}
+                    </b></th>
+                    <th class="py-4" scope="row"><b class="h6 font-weight-bold" >1 &nbsp; USD</b></th>
+                    <th class="py-4" scope="row"><b class="h6 font-weight-bold" >{{request.dzd}}</b></th>
+                    <th class="py-4" scope="row"><b class="h6 font-weight-bold" >{{request.eur}}</b></th>
+                    <th class="py-4" scope="row"><b class="h6 font-weight-bold" >{{request.user_last_edit}}</b></th>
+                </tr>
+                {% endfor %}     
+            </tbody>
+        </table>
+        
+        <!-- PAGINATION -->
+        <!-- <nav aria-label="Page navigation example mt-5">   
+            <ul id="pagin" class="pagination pagination-lg justify-content-center mt-5">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="Previous">
+                    <span aria-hidden="true">PREVIOUS</span>
+                    <span class="sr-only">begin</span>
+                </a>
+                </li>   {% endif %}
+                
+                {% for n in page_obj.paginator.page_range %}
+                {% if page_obj.number == n %}
+                    <li class="page-item active page-active">
+                    <span class="page-link">{{ n }}<span class="sr-only">(current)</span></span>
+                    </li>
+                {% elif n > page_obj.number|add:'-5' and n < page_obj.number|add:'5' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ n }}">{{ n }}</a></li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Next">
+                    <span aria-hidden="true">NEXT</span>
+                    <span class="sr-only">end</span>
+                    </a>
+                </li>
+                {% endif %}   
+            </ul>
+        </nav> -->
+    
+    </div>
+    <div class="shadow p-3 mb-5 bg-white rounded w-100y align-self-start col-4">
+        <div class="d-flex flex-row mb-4">
+            <h3 style="font-weight: bolder !important;"><b>TAUX ACTUEL</b></h3>
+            <svg id="edit-ex" xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor" class="bi bi-pencil-square ml-auto" style="cursor: pointer;" viewBox="0 0 16 16">
+                <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
+              </svg>
+        </div>
+        <form action="{% url 'core:valid-exchange-rate' %}" method="POST" class="add-rate" style="display: none;">
+            {% csrf_token %}
+            <div class="form-group row d-flex justify-content-center mb-5">
+                <label for="pax_last_name" class=" col-sm-2 col-form-label">1 &nbsp; USD :</label>
+                <div class="col-sm-6 d-flex flex-row">
+                    <input type="number" step="0.001" id='dzd' name="dzd" class="form-control mr-4" placeholder="Montant" required>
+                    <p class="mb-0 h5 d-flex align-items-center">DZD</p>
+                </div>
+            </div>
+            <div class="form-group row d-flex justify-content-center">
+                <label for="pax_last_name" class=" col-sm-2 col-form-label">1 &nbsp; USD :</label>
+                <div class="col-sm-6 d-flex flex-row">
+                    <input type="number" step="0.001" id='eur' name="eur" class="form-control mr-4" placeholder="Montant" required>
+                    <p class="mb-0 h5 d-flex align-items-center">EUR</p>
+                </div>
+            </div>
+            <button type="submit" id="submit-form" class="btn mt-4" style="color: white !important; background-color: #0e385b !important;"><b>ENREGISTRER</b></button>
+        </form>
+        <div class="current-rate">
+            <p class="mb-0 h5 text-muted">Enrégistré le {{actual.date_begin|date:'d/m/Y'}} </p>
+            <div class="d-flex flex-row align-items-center mt-5 ml-5">
+                <p class="mb-0 h3 mr-4 justify-content-center">1 &nbsp; USD</p>
+                <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="#22b41f" class="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                    <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"/>
+                </svg>
+                <p class="mb-0 h3 ml-4 justify-content-center"> {{actual.dzd}} &nbsp; DZD</p>
+            </div>
+            <div class="d-flex flex-row align-items-center mt-5 ml-5 mb-5">
+                <p class="mb-0 h3 mr-4 justify-content-center">1 &nbsp; USD</p>
+                <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="#22b41f" class="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                    <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"/>
+                </svg>
+                <p class="mb-0 h3 ml-4 justify-content-center"> {{actual.eur}} &nbsp; EUR</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- <a href="{% url 'core:fiche-touchee' %}" class="btn fixed-top btn-lg my-0 p float-right" style="color: white !important; background-color: #0e385b !important;">
+    <b>AJOUTER</b>
+</a> -->
+
+
+<script>
+    var bg = 1;
+    $('#edit-ex').on('click', function(){
+        if(bg){
+            $('.current-rate').slideUp('slow')
+            $('.add-rate').slideDown('slow')
+            bg = 0;
+        }
+        else{
+            $('.add-rate').slideUp('slow')
+            $('.current-rate').slideDown('slow')
+            bg = 1
+        }
+    });
+</script>
+
+{% endblock content %}

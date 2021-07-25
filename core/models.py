@@ -78,7 +78,8 @@ class EXCHANGE(models.Model):
     eur = models.FloatField(db_column='EUR', null=None)
     status = models.TextField(db_column='STATUS', null=True)
     user_last_edit = models.TextField(db_column='USER LAST EDIT',null=True, blank=True)
-    date_last_edit = models.DateTimeField(auto_now=True, db_column='DATE LAST EDIT', null=True, blank=True)
+    date_begin = models.DateTimeField(db_column='DATE LAST EDIT', null=True, blank=True)
+    date_end = models.DateField(null=True, blank=True)
 
     class Meta:
         db_table = 'EXCHANGE'
@@ -161,6 +162,8 @@ class TARIF_OCCAS(models.Model):
     user_last_edit = models.TextField(db_column='USER LAST EDIT',null=True, blank=True)
     date_last_edit = models.DateTimeField(auto_now=True, db_column='DATE LAST EDIT', null=True, blank=True)
     status = models.TextField(db_column='STATUS', null=True, default='actual')
+    dte_begin = models.DateTimeField(auto_now_add=True, db_column='DATE BEGIN', null=True, blank=True)
+    dte_end = models.DateField(db_column='DATE END', blank=True, null=True)
 
     class Meta:
         db_table = 'TARIF_OCCAS'
@@ -255,6 +258,9 @@ class COMP_DISPATCHER(models.Model):
     cnl_12_24 = models.PositiveIntegerField(db_column = '12 < CNL <= 24', blank = True, null = True, default=None)
     cnl_12 = models.PositiveIntegerField(db_column = 'CNL <= 12', blank = True, null = True, default=None)
     reduction = models.PositiveIntegerField(db_column = 'REDUCTION', blank = True, null = True, default=None)
+    dte_begin = models.DateTimeField(auto_now_add=True, db_column='DATE BEGIN', null=True, blank=True)
+    dte_end = models.DateField(db_column='DATE END', blank=True, null=True)
+
     class Meta:
         db_table = 'COMP_DISPACTHER'
     
@@ -615,11 +621,18 @@ class FLIGHT_ASSIST(models.Model):
     def save(self, *args, **kwargs):
         date_arr = str(self.date_arrivee)
         # print('date arr : ' + date_arr)
-        date_arr = date_arr.replace('-', '').replace('2021', '21')
+        date_arr = date_arr.replace('-', '')
+        date_arr = date_arr[2:]
         date_arr = date_arr[4:] + date_arr[2:4] + date_arr[:2]
+        try:
+            self.n_vol_arr = str(int(self.n_vol_arr))
+            if len(self.n_vol_arr) < 4:
+                self.n_vol_arr = '0' + str(self.n_vol_arr)
+        except ValueError:
+            self.n_vol_arr = self.n_vol_arr.replace('-', '')
         self.key_flt = date_arr + self.n_vol_arr + self.escale + self.prov
         # print(self.key_flt)
-        self.slug = slugify(self.key_flt)
+        self.slug = slugify(self.key_flt.lower())
         #this line below save every fields of the model instance
         try:
             obj = FLIGHT_ASSIST.objects.filter(n_field = self.n_field).exclude(key_flt=self.key_flt).get()
@@ -718,9 +731,15 @@ class HISTORIQUE_REGULAR_FACT(models.Model):
     montant = models.FloatField(db_column='MONTANT', blank=True, null=True)
     slug = models.SlugField(null=True, blank=True)
     type_fact = models.TextField(db_column='TYPE FACT', blank=True, null=True)
+    n_facture = models.TextField(db_column='N° FACTURE', null=True, blank=True)
 
     class Meta:
         db_table = 'HISTORIQUE_REGULAR_FACT'
+    
+    def get_absolute_url(self):
+        return reverse('core:fact-regular-detail', kwargs={
+            'slug': self.slug
+        })
 
 
 class HISTORIQUE_OP_COMPANY(models.Model):
@@ -799,13 +818,17 @@ class BAG_SUIVI(models.Model):
     search_status = models.TextField(db_column='SEARCH STATUS', blank=True, null=True)
     dte_sign = models.DateField(db_column='DATE SIGN', blank=True, null=True)
     dpt_dest = models.TextField(db_column='DPT DESTINATAIRE', blank=True, null=True)
+    id_type = models.TextField(db_column='TYPE ID', blank=True, null=True)
+    id_num = models.TextField(db_column='NUM ID', blank=True, null=True)
+    id_dte_deliv = models.DateField(db_column='DTE DELIV ID', blank=True, null=True)
+    id_geo_deliv = models.TextField(db_column='LIEU DELIV ID', blank=True, null=True)
     dte_send_payment =  models.DateField(db_column='DATE SEND PAYMENT', blank=True, null=True)
     dte_recept = models.DateField(db_column='DATE RECEPT PAYMENT', blank=True, null=True)
     bord_env_ref = models.TextField(db_column='REF BORD ENV', blank=True, null=True)
     bord_env_accord = models.BooleanField(default=False, blank=True, null=True)
-    rib_n = models.PositiveIntegerField(db_column = 'RIB VALUE', blank=True, null=True)
-    rib_key = models.PositiveIntegerField(db_column = 'RIB KEY', blank=True, null=True)
-    payment_status = models.TextField(db_column='PAYMENT STATUS', blank=True, null=True)
+    rib_n = models.TextField(db_column = 'RIB VALUE', blank=True, null=True)
+    rib_key = models.TextField(db_column = 'RIB KEY', blank=True, null=True)
+    payment_status = models.BooleanField(db_column='PAYMENT STATUS', blank=True, null=True)
     user_last_edit = models.TextField(db_column='USER LAST EDIT',null=True, blank=True)
     date_last_edit = models.DateTimeField(auto_now=True, db_column='DATE LAST EDIT', null=True, blank=True)
     match = models.BooleanField(default=False, null=True, blank=True)
@@ -848,6 +871,9 @@ class BAG_FLIGHTS(models.Model):
     fs = models.TextField(db_column='FS', null=True, blank=True)
     ft = models.TextField(db_column='FT', null=True, blank=True)
     flt_obs = models.TextField(db_column='OBS', blank=True, null=True)
+    miles = models.FloatField(db_column='MILES', blank=True, null=True)
+    montant_fct = models.FloatField(db_column='MONTANT FACT', null=True, blank=True)
+    currency = models.TextField(db_column='CURRENCY', blank=True, null=True)
 
     class Meta:
         db_table = 'BAG_FLIGHTS'    

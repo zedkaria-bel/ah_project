@@ -25,14 +25,36 @@ Détail de la facturation
     </svg>
     <p class="ml-3 h4" style="color: #7d7d7d !important;">Imprimer</p>
 </div> -->
-<p class="h6 mb-4">Résultats : {{qs_count}} vol(s) </p>
+<div class="d-flex flex-row align-items-center">
+    <p class="h6 mb-4">Résultats : {{qs_count}} vol(s) </p>
+    {% if fact is None %}
+    <div class="form-group col-md-10 ml-auto">
+        <form action="{% url 'core:fact-regular-bill' id=slug %}" method="POST">
+            <div class="form-group row d-flex align-items-center">
+                {% csrf_token %}
+                <label for="n_fiche_touchee" class="col-form-label col-sm-2 ml-auto text-right font-weight-bold">N° FACTURE &nbsp; : </label>
+                <div class="col-sm-2">
+                    <input type="text" class="form-control fact" name="n_facture" id="n_facture" placeholder="N° Facture" required>
+                </div>
+                <button type="submit" id="submit-form" class="btn col-sm-2" style="color: white !important; background-color: #0e385b !important;" disabled ><b>CONFIRMER</b></button>
+            </div>
+        </form>
+      </div>
+      {% endif %}
+</div>
+
 {% endif %}
 
 {% if qs_count %}
     <div id="to_print">
         
         <div class="d-flex justify-content-between">
-            <p class="h3 mb-4">ESCALE : <b id="esc">{{esc}}</b> <span id="corr">{% if type_fact is not None %} - ( {{type_fact}} ) {% endif %}</span> </p>
+            <div class="flex-column">
+                <p class="h3 mb-4">ESCALE : <b id="esc">{{esc}}</b> <span id="corr">{% if type_fact is not None %} - ( {{type_fact}} ) {% endif %}</span> </p>
+                {% if fact is not None %}
+                <p class="h3 mb-4">FACTURE N°<b> {{fact}} </b></p>
+                {% endif %}
+            </div>
             <div class="flex-column">
                 <p class="h3">COMPAGNIE : <b id="comp">{{company}} </b> </p>
                 <p class="h3">PÉRIODE : <b>du <span id="from_date">{{from_date|date:"d-m-Y"}}</span> au <span id="until_date">{{until_date|date:"d-m-Y"}}</span> </b> </p>
@@ -258,12 +280,22 @@ Détail de la facturation
 
 <script>
 
+    $('.fact').on('keyup', function(){
+        if($('.fact').val() == ''){
+            $('#submit-form').prop('disabled', true)
+        }
+        else{
+            $('#submit-form').prop('disabled', false)
+        }
+    });
+
     $(document).ready(function(){
         $('[data-toggle="tooltip"]').tooltip(); 
     });
     var corr = '';
     console.log($('#corr').text())
-    if($('#corr').text().indexOf('CORRECTION')){
+    if($('#corr').text().indexOf('CORRECTION')>0){
+        console.log($('#corr').text())
         var corr = '_CORRECTION_'
     }
 

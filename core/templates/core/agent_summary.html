@@ -3,7 +3,7 @@
 {% load cart_template_tags %}
 {% load i18n %}
 {% block head_title %}
-Etat des demandes (Vols OCCAS.)
+Etat des vols
 {% endblock head_title %}
 
 {% block content %}
@@ -19,6 +19,61 @@ Etat des demandes (Vols OCCAS.)
     {% endfor %}
 </div>
 {% endif %}
+
+<form method="GET" class="align-self-center mb-4">
+    {% csrf_token %}
+    <div class="d-flex flex-row mb-3 align-self-center">
+        <select class="custom-select-dz py-2 px-2 mr-3 align-self-center" name="compagnie_dispatcher" id="compagnie_dispatcher">
+            <option value="all" {% if not filter_cmp %} selected {% endif %} >COMPANY (ALL)</option>
+            {% for etat in companies %}
+            <option value="{{etat.company_dispatcher}}" {% if etat.company_dispatcher == filter_cmp %} selected {% endif %}>{{etat.company_dispatcher}}</option>
+            {% endfor %}
+        </select>
+        <p class="mb-0 font-weight-bold align-self-center">Entre : &nbsp; </p>
+        <input type="date" class="custom-select-dz py-2 px-2 mr-3 align-self-center" {% if filter_date_arrivee_1 %} value="{{filter_date_arrivee_1|date:'Y-m-d'}}" {% endif %} name="date_arrivee_1" id="date_arrivee_1">
+        <p class="mb-0 font-weight-bold align-self-center">Et : &nbsp; </p>
+        <input type="date" class="custom-select-dz py-2 px-2 mr-3 align-self-center" {% if filter_date_arrivee_2 %} value="{{filter_date_arrivee_2|date:'Y-m-d'}}" {% endif %} name="date_arrivee_2" id="date_arrivee_2">
+        <button type="submit" id="submit-form" class="btn d-flex flex-row py-2 px-3 mr-3" style="color: white !important; background-color: #0e385b !important;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" class="bi bi-funnel-fill align-self-center" viewBox="0 0 16 16">
+                <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+              </svg>
+            <!-- <b class="mb-0">FILTRER</b> -->
+        </button>
+        <p class="init mb-0 h5 py-2 px-3 mr-3 align-self-center font-weight-bold" style="background-color: #d3ecff; color: #2747bd; border-radius: 20px; cursor: pointer;">RÉINITIALISER</p>
+        {% if act == 'contrat' %}
+        <div id="occas" class="d-flex flex-row ml-auto bascule" style="cursor: pointer !important;">
+            <a href="{% url 'core:agent-summary' activite='occas' %}" class="d-flex align-items-center mr-3 px-4 py-2" style="background-color: #2e6fa5; border-radius: 55px; transition: .2s ease-out;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" class="bi bi-arrow-left mr-3 font-weight-bold" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                </svg>
+                <p class="h6 align-middle mb-0 font-weight-bold" style="color: white;">VOLS OCCAS.</p>
+            </a>
+        </div>
+        {% else %}
+        <div id="contrat" class="d-flex flex-row ml-auto bascule" style="cursor: pointer !important;">
+            <a href="{% url 'core:agent-summary' activite='contrat' %}" class="d-flex align-items-center px-4 py-2" style="background-color: #2e6fa5; border-radius: 55px; transition: .2s ease-out;">
+                <p class="h6 d-flex vertical-align mb-0 mr-3 font-weight-bold" style="color: white;">VOLS RÉGULIERS</p>
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" class="bi bi-arrow-right font-weight-bold" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+                  </svg>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    <!-- <div class="d-flex flex-row align-self-center">
+        <p class="mb-0 font-weight-bold align-self-center">Date d'arrivée entre : &nbsp; </p>
+        <input type="date" class="custom-select-dz py-2 px-2 mr-3 align-self-center" {% if filter_date_arrivee_1 %} value="{{filter_date_arrivee_1|date:'Y-m-d'}}" {% endif %} name="date_arrivee_1" id="date_arrivee_1">
+        <p class="mb-0 font-weight-bold align-self-center">Et : &nbsp; </p>
+        <input type="date" class="custom-select-dz py-2 px-2 mr-3 align-self-center" {% if filter_date_arrivee_1 %} value="{{filter_date_arrivee_2|date:'Y-m-d'}}" {% endif %} name="date_arrivee_2" id="date_arrivee_2">
+        <button type="submit" id="submit-form" class="btn d-flex flex-row py-2 px-3 mr-3" style="color: white !important; background-color: #0e385b !important;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" class="bi bi-funnel-fill align-self-center" viewBox="0 0 16 16">
+                <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+              </svg> -->
+            <!-- <b class="mb-0">FILTRER</b> -->
+        <!-- </button>
+        <p class="init mb-0 h5 py-2 px-3 mr-3 align-self-center font-weight-bold" style="background-color: #d3ecff; color: #2747bd; border-radius: 20px; cursor: pointer;">RÉINITIALISER</p>
+    </div> -->
+</form>
 
 <div class="table-responsive">
     <table class="table">
@@ -144,4 +199,13 @@ Etat des demandes (Vols OCCAS.)
         </ul>
     </nav>
 </div>
+
+<script>
+    $('.init').on('click', function(){
+        $('.custom-select-dz').each(function(){
+            $('select.custom-select-dz').val('all')
+            $('input.custom-select-dz').val('')
+        })
+    });
+</script>
 {% endblock content %}

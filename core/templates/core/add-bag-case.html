@@ -422,7 +422,7 @@ Détails
                         {% endif %}
                     </div>
                     {% if 'OHD' not in title %}
-                    <div class="form-group col-sm-2">
+                    <!-- <div class="form-group col-sm-2">
                         <label for="fs" class="col-form-label">Fault Station</label>
                         {% if 'AJOUT' in title %}
                         <input type="text" id='fs' name="fs" class="form-control" placeholder="Station">
@@ -437,6 +437,14 @@ Détails
                         {% else %}
                         <input type="text" id='ft' {% if obj.ft is not None %} value="{{obj.ft}}" {% endif %} name="ft" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="N° Vol" >
                         {% endif %}
+                    </div> -->
+                    <div class="form-group col-sm-2">
+                        <label for="miles" class="col-form-label">Mileage ( Miles )</label>
+                        {% if 'AJOUT' in title %}
+                        <input type="text" id='miles' name="miles" class="form-control" placeholder="Distance">
+                        {% else %}
+                        <input type="text" id='miles' {% if obj.miles is not None %} value="{{obj.miles}}" {% endif %} name="miles" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="Distance" >
+                        {% endif %}
                     </div>
                     {% endif %}
                     <p class="close ml-auto mt-4 col-sm-auto" style="color: black; cursor: pointer; transform: rotate(45deg); font-weight: lighter; font-size:4em; display: none;">+</p>
@@ -448,6 +456,12 @@ Détails
                         <textarea type="text" id='flt_obs' cols="30" rows="3" name="flt_obs" class="form-control" placeholder="Remarques ..." {% if status == 'CLOSED' %} disabled {% endif %} >{% if obj.flt_obs is not None %}{{obj.flt_obs}}{% endif %}</textarea>
                         {% endif %}
                     </div>
+                    {% if obj.montant_fct is not None %}
+                    <div class="form-group col-sm-4">
+                        <label for="montant_fct" class="col-form-label">Montant à facturer</label>
+                        <input type="text" id='montant_fct' value="{{obj.montant_fct}} &nbsp; USD" name="montant_fct" class="form-control" placeholder="Montant" readonly required >
+                    </div>
+                    {% endif %}
                 </div>
                 <hr class="mt-3 divid" style="color: black !important; height: 2px !important;">
                 {% endfor %}
@@ -748,7 +762,7 @@ Détails
             </div>          
         </div>
     </div>
-    {% if 'OHD' not in title and obj.status == 'EN COURS D\'INDEMNISATION' %}
+    {% if 'OHD' not in title and obj.status == 'EN COURS D\'INDEMNISATION' or obj.status == 'CLOSED' %}
     <div class="shadow p-3 mb-5 bg-white rounded w-100y">
         <h3 style="font-weight: bolder !important;"><b>INDÉMNISATION</b></h3>
         <div class="d-flex flex-row">
@@ -801,6 +815,117 @@ Détails
             </div>
             {% endif %}
         </div>
+        <div class="accord_div" {% if not ind.accord %} style="display: none;" {% endif %}>
+            <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>ACCORD DU PASSAGER</b></h5>
+            <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+            <div class="form-row">
+                <div class="form-group col-sm-2">
+                    <label for="accord" class="col-form-label">Date de signature du passager</label>
+                    {% if obj.dte_sign is not None %}
+                    <input type="date" id='dte_sign' name="dte_sign" value="{{obj.dte_sign|date:'Y-m-d'}}" class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Date" required>
+                    {% else %}
+                    <input type="date" id='dte_sign' class="form-control" placeholder="Date">
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-2">
+                    <label for="accord" class="col-form-label">Date réception de la quittance</label>
+                    {% if obj.dte_recept is not None %}
+                    <input type="date" id='dte_recept' name="dte_recept" value="{{obj.dte_recept|date:'Y-m-d'}}" class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Date" required>
+                    {% else %}
+                    <input type="date" id='dte_recept' class="form-control" placeholder="Date">
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-2">
+                    <label for="accord" class="col-form-label">Type ID</label>
+                    {% if obj.id_type is not None %}
+                    <select class="custom-select" id="id_type" name="id_type" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} required>
+                        <option value="cn" {% if obj.id_type == 'cn' %} selected {% endif %} >CARTE ID NATIONALE</option>
+                        <option value="pc" {% if obj.id_type == 'pc' %} selected {% endif %}>PERMIS DE CONDUIRE</option>
+                        <option value="pp" {% if obj.id_type == 'pp' %} selected {% endif %}>PASSEPORT</option>
+                    </select>
+                    {% else %}
+                    <select class="custom-select" id="id_type" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %}>
+                        <option value="cn" selected>CARTE ID NATIONALE</option>
+                        <option value="pc">PERMIS DE CONDUIRE</option>
+                        <option value="pp">PASSEPORT</option>
+                    </select>
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-2">
+                    <label for="accord" class="col-form-label">Numéro ID</label>
+                    {% if obj.id_num is not None %}
+                    <input type="number" id='id_num' name="id_num" value="{{obj.id_num}}" class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="N° ID" required>
+                    {% else %}
+                    <input type="number" id='id_num' class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="N° ID">
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-2">
+                    <label for="accord" class="col-form-label">Date de délivrance ID</label>
+                    {% if obj.id_dte_deliv is not None %}
+                    <input type="date" id='id_dte_deliv' name="id_dte_deliv" value="{{obj.id_dte_deliv|date:'Y-m-d'}}" class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Date" required>
+                    {% else %}
+                    <input type="date" id='id_dte_deliv' class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Date">
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-2">
+                    <label for="accord" class="col-form-label">Lieu de délivrance ID</label>
+                    {% if obj.id_geo_deliv is not None %}
+                    <input type="text" id='id_geo_deliv' name="id_geo_deliv" value="{{obj.id_geo_deliv}}" class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Lieu" required>
+                    {% else %}
+                    <input type="text" id='id_geo_deliv' class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Lieu">
+                    {% endif %}
+                </div>
+            </div>
+            <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>RELEVÉ D'IDENTITÉ BANCAIRE - RIB </b></h5>
+            <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+            <div class="form-row">
+                <div class="form-group col-sm-4">
+                    <label for="accord" class="col-form-label">N° RIB</label>
+                    {% if obj.rib_n is not None %}
+                    <input type="number" id='rib_n' name="rib_n" value="{{obj.rib_n}}" class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Ex : XXXXXXXXXXXXXXXXXX" required>
+                    {% else %}
+                    <input type="number" id='rib_n' class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Ex : XXXXXXXXXXXXXXXXXX">
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-1">
+                    <label for="accord" class="col-form-label">Clé RIB</label>
+                    {% if obj.rib_key is not None %}
+                    <input type="number" id='rib_key' name="rib_key" value="{{obj.rib_key}}" class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Ex : XX" required>
+                    {% else %}
+                    <input type="number" id='rib_key' class="form-control" {% if status == 'CLOSED' or ind.accord %} disabled {% endif %} placeholder="Ex : XX">
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-12">
+                    <label for="accord" class="col-form-label">Observations</label>
+                    {% if obj.rmq is not None %}
+                    <textarea id='rmq' name="rmq" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="Remarques ...">{{obj.rmq}}</textarea>
+                    {% else %}
+                    <textarea id='rmq' rows="3" cols="30" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="Remarques ..."></textarea>
+                    {% endif %}
+                </div>
+            </div>
+            {% if obj.rib_n is not None %}
+            <h5 class='mt-5' style="font-weight: bolder !important; color: #0e385b !important;"><b>FINALISATION</b></h5>
+            <hr class='mt-0' style="height: 4px !important; background-color: #0e385b !important;">
+            <div class="form-row">
+                <div class="form-group col-sm-4">
+                    <label for="payment_status" class="col-form-label">Status du paiement</label>
+                    <select class="custom-select" id="payment_status" name="payment_status" {% if status == 'CLOSED' or obj.payment_status %} disabled {% endif %} required>
+                        <option value="oui" {% if obj.payment_status %} selected {% endif %} >PAIEMENT EFFECTUÉ</option>
+                        <option value="non" {% if not obj.payment_status %} selected {% endif %}>EN COURS DE PAIEMENT</option>
+                    </select>
+                </div>
+                <div class="form-group col-sm-2 dte_send_payment" {% if not obj.payment_status %} style="display: none;" {% endif %}>
+                    <label for="dte_send_payment" class="col-form-label">Date du paiement</label>
+                    {% if obj.dte_send_payment is not None %}
+                    <input type="date" id='dte_send_payment' name="dte_send_payment" value="{{obj.dte_send_payment|date:'Y-m-d'}}" class="form-control" {% if status == 'CLOSED' %} disabled {% endif %} placeholder="Date" required>
+                    {% else %}
+                    <input type="date" id='dte_send_payment' class="form-control" placeholder="Date">
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
     <button type="submit" id="submit-form" class="btn btn-lg" style="color: white !important; background-color: #0e385b !important;" {% if status == 'CLOSED' %} disabled {% endif %}><b>{% if 'AJOUT' in title %}AJOUTER{% else %}MODIFIER{% endif %}</b></button>
@@ -812,6 +937,60 @@ Détails
     var cloneCount = 1;
     var add_flt;
     var add_bag;
+
+    $('#payment_status').on('change', function(){
+        if( $('#payment_status').val() == 'oui' ){
+            $('.dte_send_payment').slideDown('slow')
+            $('#dte_send_payment').attr('name', 'dte_send_payment')
+            $('#dte_send_payment').attr('required', true)
+        }
+        else{
+            $('.dte_send_payment').slideUp('slow')
+            $('#dte_send_payment').removeAttr('name')
+            $('#dte_send_payment').attr('required', false)
+        }
+    });
+
+    $('#accord').on('change', function(){
+        if( $('#accord').val() == 'oui' ){
+            $('.accord_div').slideDown('slow');
+            $('#dte_sign').attr('name', 'dte_sign')
+            $('#dte_recept').attr('name', 'dte_recept')
+            $('#id_type').attr('name', 'id_type')
+            $('#id_num').attr('name', 'id_num')
+            $('#id_dte_deliv').attr('name', 'id_dte_deliv')
+            $('#id_geo_deliv').attr('name', 'id_geo_deliv')
+            $('#rib_n').attr('name', 'rib_n')
+            $('#rib_key').attr('name', 'rib_key')
+            $('#dte_sign').attr('required', true)
+            $('#dte_recept').attr('required', true)
+            $('#id_type').attr('required', true)
+            $('#id_num').attr('required', true)
+            $('#id_dte_deliv').attr('required', true)
+            $('#id_geo_deliv').attr('required', true)
+            $('#rib_n').attr('required', true)
+            $('#rib_key').attr('required', true)
+        }
+        else{
+            $('.accord_div').slideUp('slow');
+            $('#dte_sign').removeAttr('name')
+            $('#dte_recept').removeAttr('dte_recept')
+            $('#id_type').removeAttr('name')
+            $('#id_num').removeAttr('name')
+            $('#id_dte_deliv').removeAttr('name')
+            $('#id_geo_deliv').removeAttr('name')
+            $('#rib_n').removeAttr('name')
+            $('#rib_key').removeAttr('name')
+            $('#dte_sign').attr('required', false)
+            $('#dte_recept').attr('required', false)
+            $('#id_type').attr('required', false)
+            $('#id_num').attr('required', false)
+            $('#id_dte_deliv').attr('required', false)
+            $('#id_geo_deliv').attr('required', false)
+            $('#rib_n').attr('required', false)
+            $('#rib_key').attr('required', false)
+        }
+    });
 
     $('div').on('click', 'div.add_bag', function(){
         console.log('ASXDEC')

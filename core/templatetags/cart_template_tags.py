@@ -11,7 +11,8 @@ from core.models import (
     FLIGHT_ASSIST,
     FLIGHT_OCCAS,
     COMP_DISPATCHER,
-    BAG_DETAILS
+    BAG_DETAILS,
+    BAG_HIST_INDEMN,
 )
 
 
@@ -19,17 +20,33 @@ register = template.Library()
 
 
 @register.filter
-def flight_occas_count(user):
+def flight_occas_count(user, act):
     if user.is_authenticated:
-        qs = FLIGHT_ASSIST.objects.all()
+        if act == 'occas':
+            cmps = COMP_DISPATCHER.objects.filter(activite = 'OCCASIONNEL').values_list('company_dispatcher', flat=True)
+        else:
+            cmps = COMP_DISPATCHER.objects.filter(activite = 'CONTRACTUEL').values_list('company_dispatcher', flat=True)
+        qs = FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = cmps)
+        qs = qs.filter(montant_globale__isnull = False, n_facture__isnull = True)
         if qs.exists():
             return qs.count()
     return 0
 
 @register.filter
-def flight_occas_opere_count(user):
+def flight_occas_opere_count(user, act):
     if user.is_authenticated:
-        qs = FLIGHT_ASSIST.objects.filter(montant_globale__isnull = False, etat_du_vol='OPERE')
+        cmps = COMP_DISPATCHER.objects.filter(activite = 'OCCASIONNEL').values_list('company_dispatcher', flat=True)
+        exc = ['OPERE', 'NO OP', 'ANNULE']
+        qs = FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = cmps).exclude(etat_du_vol__in = exc)
+        if qs.exists():
+            return qs.count()
+    return 0
+
+@register.filter
+def flight_for_today(user):
+    if user.is_authenticated:
+        cmps = COMP_DISPATCHER.objects.filter(activite = 'CONTRACTUEL').values_list('company_dispatcher', flat=True)
+        qs = FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = cmps, date_arrivee = datetime.datetime.now().date())
         if qs.exists():
             return qs.count()
     return 0
@@ -37,7 +54,9 @@ def flight_occas_opere_count(user):
 @register.filter
 def flight_occas_cnl_count(user):
     if user.is_authenticated:
-        qs = FLIGHT_ASSIST.objects.filter(etat_du_vol='ANNULE')
+        cmps = COMP_DISPATCHER.objects.filter(activite = 'OCCASIONNEL').values_list('company_dispatcher', flat=True)
+        exc = ['OPERE', 'NO OP', 'ANNULE']
+        qs = FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = cmps).exclude(etat_du_vol__in = exc)
         if qs.exists():
             return qs.count()
     return 0
@@ -90,7 +109,7 @@ def smooth_timedelta(timedeltaobj):
 
 @register.filter()
 def if_readonly(obj):
-    return obj.etat_du_vol == 'ANNULE' or obj.etat_du_vol == 'OPERE' or obj.etat_du_vol == 'NO OP'
+    return obj.etat_du_vol == 'ANNULE' or obj.etat_du_vol == 'OPERE'
 
 @register.filter
 def get_type(value):
@@ -143,3 +162,22 @@ def days_since(value, arg=None):
 @register.filter
 def bag_id(id):
     return BAG_DETAILS.objects.get(suivi=id).bag_n_tag
+
+@register.filter
+def get_proposition(obj, attr):
+    try:
+        ind_obj = BAG_HIST_INDEMN.objects.filter(suivi = obj).order_by('-_id').first()
+    except BAG_HIST_INDEMN.DoesNotExist:
+        return None
+    if ind_obj is None or ind_obj.dte_prop is None:
+        return None
+    return getattr(ind_obj, attr)
+
+@register.filter(expects_localtime=True)
+def days_until(dte_end):
+    delta = dte_end - datetime.datetime.now().date()
+    return delta.days
+
+@register.filter
+def get_str_id(obj):
+    return str(obj.auto_id)

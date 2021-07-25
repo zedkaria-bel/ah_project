@@ -1,0 +1,96 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+{% load i18n %}
+
+{% block head_title %}
+List des tarifs occasionnels
+{% endblock head_title %}
+
+
+{% block content %}
+{% if messages %}
+<div id="div-msg" class="mt-2 pb-0 pt-0">
+    {% for message in messages %}
+    <div id="exist" class="alert alert-{{ message.tags }} alert-dismissible fade show align-items-center" role="alert">
+        <p class="mb-0 msg">{{ message }}</p>
+        <button type="button" class="close align-items-center mb-0" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="table-responsive">
+    <table id="table-bag-cases" class="table table-hover" style="font-size: 10px !important; width: 100% !important;">
+        <thead class="thead-light">
+          <tr>
+            <th class="py-3" scope="col"><b class="h6">#</b></th>
+            <th class="py-3" scope="col"><b class="h6">Date début</b></th>
+            <th class="py-3" scope="col"><b class="h6">Date fin</b></th>
+            <th class="py-3" scope="col"><b class="h6">Détails</b></th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+            {% for request in object_list %}
+            <tr class="row_tab" style="border-bottom: 2px #d7d7d7 solid !important;">
+                <th class="py-4" scope="row"><b class="h6 font-weight-bold" >{{ forloop.counter }}</b></th>
+                <th class="py-4" scope="row"><b class="h6 font-weight-bold" >{{ request.dte_begin|date:'d/m/Y' }}</b></th>
+                <th class="py-4" scope="row"><b class="h6 font-weight-bold" >{{ request.dte_end|date:'d/m/Y' }}</b></th>
+                <td class="py-4">
+                    <a href="{% url 'core:price-list' request.auto_id %}" target="_blank" class="d-flex justify-content-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+                            <path d="M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z"/>
+                          </svg>
+                    </a>
+                </td> 
+            </tr>
+            {% endfor %}     
+        </tbody>
+    </table>
+    
+    <!-- PAGINATION -->
+    <!-- <nav aria-label="Page navigation example mt-5">   
+        <ul id="pagin" class="pagination pagination-lg justify-content-center mt-5">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+            <a class="page-link" href="?page=1" aria-label="Previous">
+                <span aria-hidden="true">PREVIOUS</span>
+                <span class="sr-only">begin</span>
+            </a>
+            </li>   {% endif %}
+            
+            {% for n in page_obj.paginator.page_range %}
+            {% if page_obj.number == n %}
+                <li class="page-item active page-active">
+                <span class="page-link">{{ n }}<span class="sr-only">(current)</span></span>
+                </li>
+            {% elif n > page_obj.number|add:'-5' and n < page_obj.number|add:'5' %}
+                <li class="page-item"><a class="page-link" href="?page={{ n }}">{{ n }}</a></li>
+            {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Next">
+                <span aria-hidden="true">NEXT</span>
+                <span class="sr-only">end</span>
+                </a>
+            </li>
+            {% endif %}   
+        </ul>
+    </nav> -->
+
+</div>
+
+<!-- <a href="{% url 'core:fiche-touchee' %}" class="btn fixed-top btn-lg my-0 p float-right" style="color: white !important; background-color: #0e385b !important;">
+    <b>AJOUTER</b>
+</a> -->
+
+
+<script>
+
+</script>
+
+{% endblock content %}

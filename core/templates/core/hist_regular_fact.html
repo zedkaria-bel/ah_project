@@ -9,6 +9,47 @@ Historique des facturations des vols contractuels
 
 {% block content %}
 
+<form method="GET" action="{% url 'core:hist-regular-fact' %}" class="align-self-center mb-3">
+    {% csrf_token %}
+    <div class="d-flex flex-row mb-3 align-self-center">
+        <select class="custom-select-dz py-2 px-2 mr-3 align-self-center" name="escale" id="escale">
+            <option value="all" {% if not filter_escale %} selected {% endif %} >ESCALES (ALL)</option>
+            {% for etat in escales %}
+            <option value="{{etat.escale}}" {% if etat.escale == filter_escale %} selected {% endif %}>{{etat.escale}}</option>
+            {% endfor %}
+        </select>
+        <select class="custom-select-dz py-2 px-2 mr-3 align-self-center" name="company" id="company">
+            <option value="all" {% if not filter_cmp %} selected {% endif %} >COMPANY (ALL)</option>
+            {% for etat in companies %}
+            <option value="{{etat.company_dispatcher}}" {% if etat.company_dispatcher == filter_cmp %} selected {% endif %}>{{etat.company_dispatcher}}</option>
+            {% endfor %}
+        </select>
+        <p class="mb-0 font-weight-bold align-self-center">Depuis le : &nbsp; </p>
+        <input type="date" class="custom-select-dz py-2 px-2 mr-3 align-self-center" {% if filter_from_date %} value="{{filter_from_date|date:'Y-m-d'}}" {% endif %} name="from_date" id="from_date">
+        <p class="mb-0 font-weight-bold align-self-center">Et : &nbsp; </p>
+        <input type="date" class="custom-select-dz py-2 px-2 mr-3 align-self-center" {% if filter_until_date %} value="{{filter_until_date|date:'Y-m-d'}}" {% endif %} name="until_date" id="until_date">
+        <select class="custom-select-dz py-2 px-2 mr-3 align-self-center" name="users" id="users">
+            <option value="all" {% if not filter_users %} selected {% endif %} >USER (ALL)</option>
+            {% for etat in users %}
+            <option value="{{etat}}" {% if etat == filter_users %} selected {% endif %}>{{etat}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="d-flex flex-row align-self-center">
+        <p class="mb-0 font-weight-bold align-self-center">Date de facturation entre : &nbsp; </p>
+        <input type="date" class="custom-select-dz py-2 px-2 mr-3 align-self-center" {% if filter_date_last_add_1 %} value="{{filter_date_last_add_1|date:'Y-m-d'}}" {% endif %} name="date_last_add_1" id="date_last_add_1">
+        <p class="mb-0 font-weight-bold align-self-center">Et : &nbsp; </p>
+        <input type="date" class="custom-select-dz py-2 px-2 mr-3 align-self-center" {% if filter_date_last_add_2 %} value="{{filter_date_last_add_2|date:'Y-m-d'}}" {% endif %} name="date_last_add_2" id="date_last_add_2">
+        <button type="submit" id="submit-form" class="btn d-flex flex-row py-2 px-3 mr-3" style="color: white !important; background-color: #0e385b !important;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" class="bi bi-funnel-fill align-self-center" viewBox="0 0 16 16">
+                <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+              </svg>
+            <!-- <b class="mb-0">FILTRER</b> -->
+        </button>
+        <p class="init mb-0 h5 py-2 px-3 mr-3 align-self-center font-weight-bold" style="background-color: #d3ecff; color: #2747bd; border-radius: 20px; cursor: pointer;">RÉINITIALISER</p>
+    </div>
+</form>
+
 <div class="table-responsive">
     <table id="tab_hist_fact" class="table table-hover">
         <thead class="thead-light">
@@ -20,21 +61,23 @@ Historique des facturations des vols contractuels
             <th scope="col"><b>PÉRIODE</b></th>
             <th scope="col"><b>À PARTIR DU</b></th>
             <th scope="col"><b>JUSQU'AU</b></th>
+            <th scope="col"><b>N° FACTURE</b></th>
             <th scope="col"><b>UTILISATEUR</b></th>
             <th scope="col"><b>TYPE</b></th>
             <th scope="col"><b>MONTANT</b></th>
+            <th scope="col"><b>DÉTAILS</b></th>
           </tr>
         </thead>
         <tbody>
             {% for fiche in object_list %}
             <tr class="row_tab">
-                <th scope="row"><b>{{ forloop.counter0|add:page_obj.start_index }}</b></th>
+                <th scope="row"><b>{{ forloop.counter1 }}</b></th>
                 <td><b>
                     {% language 'fr' %}
-                        {{fiche.date_last_add|date:'d F Y - H:i'}}
+                        {{fiche.date_last_add|date:'d/m/Y - H:i'}}
                     {% endlanguage %}
                 </b></td>
-                <td><b>{{fiche.escale.escale}} - {{fiche.escale.full_name}} </b></td>
+                <td><b>{{fiche.escale.escale}}</b></td>
                 <td><b>{{fiche.company}} </b></td>
                 <td><b>
                     {% language 'fr' %}
@@ -43,17 +86,31 @@ Historique des facturations des vols contractuels
                 </b></td>
                 <td><b>
                     {% language 'fr' %}
-                        {{fiche.from_date|date:'d F Y'}}
+                        {{fiche.from_date|date:'d-m-Y'}}
                     {% endlanguage %}
                 </b></td>
                 <td><b>
                     {% language 'fr' %}
-                        {{fiche.until_date|date:'d F Y'}}
+                        {{fiche.until_date|date:'d-m-Y'}}
                     {% endlanguage %}
                 </b></td>
-                <td><b>{{fiche.user_add.first_name}} {{fiche.user_add.last_name}} </b></td>
+                <td><b>
+                    {% if fiche.n_facture is None %}
+                    -
+                    {% else %}
+                    {{fiche.n_facture}}
+                    {% endif %}
+                </b></td>
+                <td><b>{{fiche.user_add.last_name|make_list|first}}. {{fiche.user_add.first_name}} </b></td>
                 <td><b>{% if fiche.type_fact %} {{fiche.type_fact}} {% else %} - {% endif %} </b></td>
                 <td><b>{{fiche.montant}} &nbsp; {{fiche.company.monnaie}} </b></td>
+                <td><b>
+                    <a href="{{fiche.get_absolute_url}}" target="_blank">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">
+                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                        </svg>
+                    </a>
+                </b></td>
             {% endfor %}     
         </tbody>
     </table>
@@ -61,6 +118,14 @@ Historique des facturations des vols contractuels
 </div>
 
 <script>
+
+    $('.init').on('click', function(){
+        $('.custom-select-dz').each(function(){
+            $('select.custom-select-dz').val('all')
+            $('input.custom-select-dz').val('')
+        })
+    });
+
     $(document).ready( function () {
         $('#tab_hist_fact').DataTable({
             "ordering": false,

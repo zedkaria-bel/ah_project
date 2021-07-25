@@ -109,9 +109,11 @@ Nouveau vol
     <div class="d-flex">
         <p class="h3 ml-5 w-50">Majoration jour férié &nbsp; : </p><p class="h3 mr-5 ml-auto">{{obj.major_jourferie}} &nbsp; %</p>
     </div>
+    {% if comp.activite == 'OCCASIONNEL' %}
     <div class="d-flex">
         <p class="h3 ml-5 w-50">Majoration absence demande 24H &nbsp; : </p><p class="h3 mr-5 ml-auto">{{obj.major_abs_demande}} &nbsp; %</p>
     </div>
+    {% endif %}
     <hr class="mt-0">
     <div class="d-flex">
         <p class="h3 ml-5 w-50 mb-0 align-middle">Majorations totales &nbsp; : </p><p class="h3 mr-5 ml-auto mb-0">(&nbsp; {{obj.majoration}} % &nbsp; ) &nbsp; {{montant_majoration}} &nbsp; {% if act != 'OCCASIONNEL' %} {{obj.monnaie}} {% else %} USD {% endif %}</p>
@@ -171,6 +173,7 @@ Nouveau vol
                 </select>
                 {% endif %}
             </div>
+            {% if 'AJOUT' in title %}
             <div class="form-group col-md-3">
                 <label for="mode_paiement" class="col-form-label">Mode de paiement</label>
                 {% if 'DETAIL' in title %}
@@ -207,6 +210,7 @@ Nouveau vol
                 </select>
                 {% endif %}
             </div>
+            {% endif %}
             <div class="form-group col-md-3">
                 <label for="monnaieSelect" class="col-form-label">Monnaie</label>
                 <select class="custom-select" name="monnaie" id="monnaieSelect" disabled>
@@ -250,7 +254,7 @@ Nouveau vol
               <div class="form-group col-md-2">
                 <label for="heure_demande" class="col-form-label">Heure de la demande</label>
                 {% if 'DETAIL' in title %}
-                <input class="form-control demande" name="heure_demande" type="time" value="{{obj.heure_demande|time:'H:i'}}" id="heure_demande" {{readonly}} required>
+                <input class="form-control demande" name="heure_demande" type="time" value="{{obj.heure_demande|time:'H:i'}}" id="heure_demande" {{readonly}}>
                 {% else %}
                 <input class="form-control demande" name="heure_demande" type="time" id="heure_demande" required>
                 {% endif %}
@@ -273,7 +277,7 @@ Nouveau vol
                 {% if obj|if_readonly or obj|flight_cnl %}
                 <input type="text" class="form-control unlock-input" name="reg" value="{{obj.reg}}" id="inputPassword5" placeholder="Password" readonly required>
                 {% else %}
-                <input type="text" class="form-control unlock-input" name="reg" value="{{obj.reg}}" id="inputPassword5" placeholder="Type" required>
+                <input type="text" class="form-control unlock-input" name="reg" value="{{obj.reg}}" id="inputPassword5" placeholder="Type" {% if act != 'CONTRACTUEL' and obj.etat_du_vol != 'New' %} required {% endif %} >
                 {% endif %}
                 {% else %}
                 <input type="text" class="form-control unlock-input" name="reg" id="inputPassword5" placeholder="Matricule avion" required>
@@ -375,6 +379,7 @@ Nouveau vol
                 </select>
                 {% endif %}
               </div>
+              {% if act == 'OCCASIONNEL' %}
               <div class="form-group col-md-3">
                 <label for="inputState" class="col-form-label">Opérateur</label>
                 {% if 'DETAIL' in title %}
@@ -387,6 +392,7 @@ Nouveau vol
                 <input type="text" class="form-control unlock-input" name="operateur" id="inputPassword8" placeholder="Opérateur" required>
                 {% endif %}
               </div>
+              {% endif %}
               {% if 'AJOUT' not in title and obj.n_fiche_touchee is not None %}
               <div class="form-group col-md-2">
                 {% if 'DETAIL' in title %}
@@ -402,8 +408,9 @@ Nouveau vol
                 <input type="checkbox" class="form-check-input"name='fiche_phys_received' id="fiche_phys_received" {% if obj.fiche_phys_received %} checked disabled {% else %} '' {% endif %}>
                 <label class="form-check-label" for="fiche_phys_received"><b>Fiche physique reçu</b></label>
               </div>
-              <div class="form-group col-md-4">
+              <div class="form-group col-md-8">
                 <label for="n_fiche_touchee" class="col-form-label">Fiche de touchée scannée</label>
+                {% if obj.fiche_touchee_file != '' %}
                 <a href="{{obj.fiche_touchee_file.url}}" target="_blank" download class="d-flex flex-row mt-3" style="color: black !important;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
                         <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
@@ -411,6 +418,9 @@ Nouveau vol
                     </svg>
                     <p class="ml-3 h4"> {{ obj.fiche_touchee_file|filename }} </p>
                 </a>
+                {% else %}
+                <p class="ml-3 h4">-</p>
+                {% endif %}
               </div>
               {% endif %}
             </div>
@@ -897,14 +907,6 @@ Nouveau vol
                 <input type="number" step="0.01" min="0" class="form-control" name="tarif_de_base" value="0" id="tarif_de_base" placeholder="Tarif de base" required>
                 {% endif %}
             </div>
-            <!-- <div class="form-group col-md-3">
-                <label for="dcs" class="col-form-label">DCS - <b>{{monnaie}} </b> </label>
-                {% if obj.montant_globale is not None %}
-                <input type="number" step="0.01" min="0" class="form-control" name="dcs" value="{{obj.dcs}}" placeholder="Montant" readonly>
-                {% else %}
-                <input type="number" step="0.01" min="0" class="form-control" name="dcs" value="{{obj.dcs}}" placeholder="Montant" required>
-                {% endif %}
-            </div> -->
             <div class="form-group col-md-3">
                 <label for="extra_service" class="col-form-label">Extras charge PASSAGERS & PISTE - <b>{{monnaie}} </b></label>
                 {% if obj.montant_globale is not None %}
@@ -913,16 +915,8 @@ Nouveau vol
                 <input type="number" min="0" step="0.01" class="form-control" name="extra_service" value="0" id="extra_service" placeholder="Montant" required>
                 {% endif %}
             </div>
-            <!-- <div class="form-group col-md-2">
-                <label for="reduction" class="col-form-label">Réduction (%)</label>
-                {% if obj.montant_globale is not None %}
-                <input type="number" min="0" max="100" step="0.01" class="form-control" name="reduction" value="{{obj.reduction}}" id="reduction" placeholder="Montant" readonly>
-                {% else %}
-                <input type="number" min="0" max="100" step="0.01" class="form-control" name="reduction" value="0" id="reduction" placeholder="Montant" required>
-                {% endif %}
-            </div> -->
         </div>
-        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>MAJORATIONS</b></h5>
+        <h5 class='mt-5' style="font-weight: bolder !important; color: #B01212 !important;"><b>MAJORATIONS - RÉDUCTIONS - ANNULATIONS</b></h5>
         <hr class='mt-0' style="height: 4px !important; background-color: #B01212 !important;">
         <div class="form-row mb-4">
             <div class="form-group col-md-2">
@@ -1210,7 +1204,10 @@ Nouveau vol
                 success: function(data){
                     // console.log(data)
                     if($(alert).children().length > 0){
-                        $(msg).slideToggle("slow");
+                        // $(msg).slideToggle("slow");
+                        if(!data.etat && !data.etat_dt && !data.etat_date){
+                            $(msg).slideToggle("slow");
+                        }
                         $(alert).find('.msg').remove();
                     }
                     if($('#alert_arr').children().length > 0 && $('#alert_arr').children().hasClass('post')){
@@ -1312,8 +1309,7 @@ Nouveau vol
                         if(data.activite == 'OCCASIONNEL'){
                             $('#message').addClass(data.status);
                             if(data.other_currency != 'USD'){
-                                $('#alert').append('<p class="msg">Solde estimé actuel : <b>' + data.solde_est + ' USD' + '<b/></br>' + 
-                                'EXCHANGE : ' + data.other_montant + ' ' + data.other_currency + '</p>');
+                                $('#alert').append('<p class="msg">Solde estimé actuel : <b>' + data.solde_est + ' USD' + '<b/></br></p>');
                             }
                             else{
                                 $('#alert').append('<p class="msg">Solde estimé actuel : <b>' + data.solde_est + ' USD' + '<b/></p>');
