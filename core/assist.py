@@ -3,64 +3,87 @@ import numpy as np
 import os
 import psycopg2
 from sqlalchemy import create_engine
-from chv import df_to_postgres
+# from chv import df_to_postgres
 
 con = psycopg2.connect(database="AH_DB", user="postgres", password="zaki1690", host="localhost", port="5432")
 con.autocommit = True
 engine = create_engine('postgresql://postgres:zaki1690@localhost:5432/AH_DB')
 cursor = con.cursor()
 
-FILE = os.listdir('OCCAS')[0]
-df = pd.read_excel('OCCAS/' + FILE, sheet_name = 'ALPHA JET')
+def tf_base(df):
+    print(df.shape)
+    # print(df.columns)
+    pd.set_option('display.max_rows', len(df))
+    df = df.loc[df['PROV'] != 'SERVICE'].copy()
+    df.dropna(subset = ['ACT DTE ARR', 'ACT DTE DEP', 'PROV', 'DEST', 'PAX     DEP', 'PAX ARRIV', 'CARGO ARRIV', 'CARGO DEP', 'Cie A FACTURER', 'NATURE TOUCHEE', 'TYPE AVION','MTOW (Tn)'], inplace = True)
+    df['STATUS'] = 'OPERE'
+    df['ACT DTE DEP'] = pd.to_datetime(df['ACT DTE DEP']).dt.date
+    df['PAX ARRIV'].fillna(0, inplace = True)
+    df['Cie A FACTURER'] = np.where((df['Cie A FACTURER'] == 'TAL') | (df['Cie A FACTURER'] == 'TASSILI AIRLINES') | (df['Cie A FACTURER'] == 'TASSILI ') | (df['Cie A FACTURER'] == 'TASSILI') | (df['Cie A FACTURER'] == 'TASSILI AIRAINES'), 'DTH', df['Cie A FACTURER'])
+    df['MTOW (Tn)'] = np.where(df['MTOW (Tn)'].str.replace('.', '', regex = False).astype(int) > 1000, df['MTOW (Tn)'].str.replace('.', '', regex = False).astype(int) / 100, df['MTOW (Tn)'])
+    df['DZD'] = np.where(df['MONNAIE'] == 'USD', df['MONTANT GLOBALE'].astype(float) * 133.43, df['DZD'])
+    df['MONTANT GLOBALE'] = np.where(df['MONNAIE'] == 'DZD', round(df['MONTANT GLOBALE'].astype(float) / 133.43, 2), df['MONTANT GLOBALE'])
+    df['MAJORATION'] = round(df['MAJORATION'] / df['TARIF DE BASE'], 2) * 100
+    df['REDUCTION'] = round(df['REDUCTION'] / df['TARIF DE BASE'], 2) * 100
+    df['TARIF DE BASE'] = np.where(df['MONNAIE'] == 'DZD', round(df['TARIF DE BASE'].astype(float) / 133.43, 2), df['TARIF DE BASE'])
+    df['EUR'] = round(df['MONTANT GLOBALE'] * 0.82, 2)
+    df['STA'] = np.where(df['STA'].str.contains('h') | df['STA'].str.contains('H'), df['STA'].str[:2] + ':' + df['STA'].str[3:] + ':00', df['STA'])
+    df['STD'] = np.where(df['STD'].str.contains('h') | df['STD'].str.contains('H'), df['STD'].str[:2] + ':' + df['STD'].str[3:] + ':00', df['STD'])
+    df['ATA'] = np.where(df['ATA'].str.contains('h') | df['ATA'].str.contains('H'), df['ATA'].str[:2] + ':' + df['ATA'].str[3:] + ':00', df['ATA'])
+    df['ATD'] = np.where(df['ATD'].str.contains('h') | df['ATD'].str.contains('H'), df['ATD'].str[:2] + ':' + df['ATD'].str[3:] + ':00', df['ATD'])
+    df.rename(columns = {
+        'STATUS': 'ETAT DU VOL',
+        'ESCALE': 'ESCALE (IATA)',
+        'PAX     DEP': 'PAX DEP',
+        'Cie A FACTURER': 'COMPAGNIE DISPATCHER',
+        'MTOW (Tn)': 'MTOW (Tonnes)',
+        'MATRICULE  AVION ': 'REG',
+        'UM': 'ASSIST_UM',
+        'WCH': 'ASSIST_WCH',
+        'MEDICAL LIFT': 'CIVIERE',
+        'GPU (MN)': 'GPU',
+        'TOILET SERVICE': 'VIDE_TOILET',
+        'WATER SERVICE': 'PLEIN_WATER',
+        'PUSH BACK ': 'PUSH_BACK',
+        'CHARIOT BAG': 'CHARIOT_BAG',
+        'TRACTEUR': 'TRACT_CHARIOT',
+        'NET CAB': 'NET_CABINE',
+        'HEADSET': 'COMM_SOL_COCKPIT',
+        'DCS': 'USE_DCS'
+    }, inplace = True)
+    df = df.drop(columns = ['Unnamed: 0', 'Unnamed: 54', 'STEP AUTO', 'STEP TRACT', 'NAVETTE PISTE', 'MANUT/TNAO', 'TAPIS BAG', 'HUM', 'F/C', 'DEPORTEES'])
+    arr = df['ACT DTE ARR'].dt.strftime('%Y-%m-%d').str.replace('-', '')
+    arr = arr.str.replace('2021', '21')
+    df['KEY_FLT'] = arr.str[4:] + arr.str[2:4] + arr.str[:2] + df['N° VOL ARRIV'] + df['ESCALE (IATA)'] + df['PROV']
+    df_cols = df.columns.to_list()
+    cols = df_cols[-1:] + df_cols[:-1]
+    df = df[cols]
+    df['slug'] = df['KEY_FLT'].str.lower()
+    df['USER LAST EDIT'] = 'Tarek Hassen'
+    df['DATE LAST EDIT'] = '2021-02-08 14:02'
+    df['DATE LAST EDIT'] = pd.to_datetime(df['DATE LAST EDIT'])
+    df['STA'] = pd.to_datetime(df['STA'], format= '%H:%M:%S').dt.time
+    df['STD'] = pd.to_datetime(df['STD'], format= '%H:%M:%S').dt.time
+    df['ATD'] = pd.to_datetime(df['ATD'], format= '%H:%M:%S').dt.time
+    df['ATA'] = pd.to_datetime(df['ATA'], format= '%H:%M:%S').dt.time
+    df.drop_duplicates(subset = ['KEY_FLT'], keep = 'first', inplace = True)
+    df.dropna(subset = ['KEY_FLT'], inplace = True)
+    df.insert(1, 'N°', range(1, 1 + len(df)))
+    df.drop([2, 3, 10, 233, 234], inplace = True)
+    print(df.head(), df.shape)
+    return df
 
-dispatcher = [None] * 4
-disp_cols = ['COMPANY DISPATCHER', 'SOLDE', 'SOLDE ESTIMEE', 'SOLDE_LAST_EDIT']
-dispatcher[0] = df['Unnamed: 2'][11]
-dispatcher[1] = df['Unnamed: 17'][2]
-dispatcher[2] = df['Unnamed: 17'][6]
-dispatcher[3] = df['Unnamed: 18'][2]
-if engine.dialect.has_table(engine, 'COMP_DISPATCHER'):
-    cmp_disp = pd.read_sql('SELECT * FROM "COMP_DISPATCHER"', con)
-    if (cmp_disp['COMPANY DISPATCHER'] == dispatcher[3]).any():
-        pass
-    else:
-        dispatcher = pd.Series(dispatcher, index = disp_cols)
-        cmp_disp = cmp_disp.append(dispatcher, ignore_index = True)
-        df_to_postgres(cmp_disp, con, cursor, engine, 'COMP_DISPACTHER')
-else:
-    dispatcher = pd.DataFrame([dispatcher], columns = disp_cols)
-    df_to_postgres(dispatcher, con, cursor, engine, 'COMP_DISPACTHER')
+FILE = os.listdir('CONTRAT & ASSIST')[2]
+# print(FILE)
+# df = pd.read_excel('CONTRAT & ASSIST/' + FILE, sheet_name = 'Feuil1', skipfooter = 1048332)
+# csv = df.to_csv('BASE.csv')
+bd_df = pd.DataFrame()
+df = pd.read_csv('BASE.csv', low_memory = False, parse_dates = ['ACT DTE ARR', 'ACT DTE DEP', 'STA', 'ATA', 'STD', 'ATD'])
+bd_df = tf_base(df)
+# df=pd.read_sql_query('select "KEY_FLT" from public."FLIGHT_ASSIST"',con=engine)
+bd_df.to_sql('FLIGHT_ASSIST', engine, if_exists='append', index=False)
 
-df = pd.read_excel('OCCAS/' + FILE, skiprows = 11, sheet_name = 'ALPHA JET')
-df = df[df['DATE DEMANDE'].notna()]
-date_dep = df['DATE DEPART'].dt.strftime('%d-%m-%Y').tolist()
-date_dep = [d.replace('-', '').replace('2021', '21') for d in date_dep]
-df['KEY_FLT'] = date_dep + df['N VOL DEP'] + df['PROV']
-cols = df.columns.to_list()
-df_cols = cols[-1:] + cols[:-1]
-df = df[df_cols]
-cursor = con.cursor()
-df_to_postgres(df, con, cursor, engine, 'FLIGHT_OCCAS')
 
-df_cols = df.columns.to_list()
-if engine.dialect.has_table(engine, 'FLIGHT_FI'):
-    bd_df = pd.read_sql('SELECT * FROM "FLIGHT_FI"', con)
-    print(bd_df.shape)
-    cols_bd = bd_df.columns.to_list()
-    for idx, row in df.iterrows():
-        vol_occas_val = [None] * len(cols_bd)
-        vol_occas_val[cols_bd.index('KEY_FLT')] = row['KEY_FLT']
-        vol_occas_val[cols_bd.index('STATUS')] = "/"
-        vol_occas_val[cols_bd.index('OCCAS')] = 'OCCAS'
-        vol_occas_val[cols_bd.index('DATE')] = row['DATE DEPART']
-        vol_occas_val[cols_bd.index('AC')] = row['TYPE AVION']
-        vol_occas_val[cols_bd.index('REG')] = row['REG']
-        vol_occas_val[cols_bd.index('DEP')] = row['PROV']
-        vol_occas_val[cols_bd.index('ARR')] = row['DEST']
-        vol_occas_val[cols_bd.index('STD')] = row['HEURE DEP']
-        vol_occas_val[cols_bd.index('STA')] = row['HEURE ARR']
-        vol_occas_val[cols_bd.index('ESCALE (IATA)')] = row['ESCALE (IATA)']
-        vol_occas_val = pd.Series(vol_occas_val, index = bd_df.columns)
-        bd_df = bd_df.append(vol_occas_val, ignore_index = True)
 
-df_to_postgres(bd_df, con, cursor, engine, 'FLIGHT_FI')
+
+# df_to_postgres(bd_df, con, cursor, engine, 'FLIGHT_FI')

@@ -21,6 +21,7 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.core.serializers import serialize
 from django.utils.text import slugify
+import calendar
 import pandas as pd
 import numpy as np
 import json
@@ -417,8 +418,8 @@ class FlightOccas(DetailView):
         flt = FLIGHT_ASSIST.objects.get(key_flt=self.get_object().pk.upper())
         context['comp'] = COMP_DISPATCHER.objects.get(company_dispatcher=flt.compagnie_dispatcher)
         context['monnaie'] = context['comp'].monnaie
+        context['act'] = context['comp'].activite
         if flt.montant_globale is not None:
-            context['act'] = context['comp'].activite
             context['montant_majoration'] = (flt.majoration * flt.tarif_de_base) / 100
             context['montant_reduction'] = (flt.tarif_de_base * flt.reduction) / 100
             context['montant_retard'] = (flt.tarif_de_base * flt.retard) / 100
@@ -761,8 +762,6 @@ def valid_uniq_flt(request):
                 'msg': msg
             }
             return JsonResponse(data)
-
-
 
 class AddVolOccas(View):
     def post(self, request):
@@ -1343,6 +1342,7 @@ class ValidNewCompany(View):
         if created:
             if obj.activite == 'OCCASIONNEL':
                 obj.solde_estimee = 0
+            obj.slug = slugify(obj.company_dispatcher.lower().replace(' ', ''))
             messages.success(request, 'La compagnie a été ajoutée avec succès')
         else:
             # COMP_DISPATCHER.objects.filter(company_dispatcher=request.POST.get('company_dispatcher')).delete()
@@ -1991,7 +1991,18 @@ def valid_company_fact(request):
                 'esc': esc.escale
             }
             return JsonResponse(data)
-                
+
+def number_format(value_int):
+    value = ''
+    if value_int >= 1000000:
+            value = "%.0f%s" % (value_int/1000000.00, ' M')
+    else:
+        if value_int >= 1000:
+            value = "%.0f%s" % (value_int/1000.0, ' K')
+        else:
+            value = str(value_int)
+    return value
+         
 def dashboard(request):
     years = []
     months = []
@@ -2010,76 +2021,210 @@ def dashboard(request):
     }
     return render(request, 'core/dashboard.html', context)           
 
+def refresh_template_cxt(request, year, month):
+    qs = FLIGHT_ASSIST.objects.filter(act_dte_arr__isnull = False)
+    qs_sum = qs.filter(montant_globale__isnull = False)
+    qs_sum = qs_sum.filter(Q(act_dte_arr__year = year) | Q(date_cnl__year = year))
+    if month is not None:
+        qs_sum = qs_sum.filter(Q(act_dte_arr__month = month) | Q(date_cnl__month = month))
+    qs_sum_prec = qs.filter(montant_globale__isnull = False)
+    qs_sum_prec = qs_sum_prec.filter(Q(act_dte_arr__year = year - 1) | Q(date_cnl__year = year - 1))
+    if month is not None:
+        qs_sum_prec = qs_sum_prec.filter(Q(act_dte_arr__month = month) | Q(date_cnl__month = month))
+    comp = COMP_DISPATCHER.objects.filter(activite='OCCASIONNEL').values_list('company_dispatcher')
+    qs_occas = FLIGHT_ASSIST.objects.filter(compagnie_dispatcher__in = comp, montant_globale__isnull = False)
+    if year is not None:
+        qs_occas = qs_occas.filter(Q(act_dte_arr__year = year) | Q(date_cnl__year = year))
+    if month is not None:
+        qs_occas = qs_occas.filter(Q(act_dte_arr__month = month) | Q(date_cnl__month = month))
+    qs_est = FLIGHT_ASSIST.objects.filter(montant_globale__isnull = True, montant_prevus__isnull = False, date_arrivee__year = year)
+    if month is not None:
+        qs_est = qs_est.filter(date_arrivee__month = month)
+    if qs_sum.count() == 0:
+        sum_mont = 0
+    else:
+        sum_mont = round(qs_sum.aggregate(Sum('montant_globale')).get('montant_globale__sum'))
+    if qs_est.count() == 0:
+        sum_est = 0
+    else:
+        sum_est = round(qs_est.aggregate(Sum('montant_prevus')).get('montant_prevus__sum'))
+    if qs_sum_prec.count() == 0:
+        sum_prec = 0
+    else:
+        sum_prec = qs_sum_prec.aggregate(Sum('montant_globale')).get('montant_globale__sum')
+    if qs_occas.count() == 0:
+        sum_occas = 0
+        print(sum_occas)
+    else:
+        sum_occas = qs_occas.aggregate(Sum('montant_globale')).get('montant_globale__sum')
+    # sum_prec = 450000
+    if sum_prec is None or sum_prec == 0:
+        act = None
+        perc = None
+    else:
+        perc = (100 - (round(sum_mont / sum_prec, 2) * 100)) * (-1)
+        if perc:
+            act = 'down'
+        else:
+            act = 'up'
+    context = {
+        'perc': str(perc).replace('-', ''),
+        'act': act,
+        'qs_occas': qs_occas.count(),
+        'sum_qs_occas': number_format(sum_occas),
+        'sum_mont': number_format(sum_mont),
+        'sum_est': number_format(sum_est),
+        'current_year': year,
+    }
+    return context
+
+def Dash(request):
+    years = []
+    months = []
+    current_year = datetime.date.today().year
+    for year in range(2019, current_year+1):
+        years.append(year)
+    for month in range(1, 13):
+        months.append(month)
+    if 'escale' in request.POST:
+        escale = request.POST.get('escale')
+    else:
+        escale = 'ALG'
+        activite = 'all'
+    context = {
+        'title': 'Data Analytics ( Département contrats et assistance au sol )'.upper(),
+        'escale': escale,
+        'activite': activite,
+        'companies': ['TOUTES'] + list(COMP_DISPATCHER.objects.filter()),
+        'escales': list(ESCALES.objects.all()),
+        'years': list(years),
+        'months': BLANK_CHOICE_DASH + list(months),
+        'acts' : BLANK_CHOICE_DASH + ['OCCASIONNEL', 'Régulier'.upper()],
+    }
+    ctxt = refresh_template_cxt(request, int(datetime.datetime.now().year), None)
+    context.update(ctxt)
+    return render(request, 'core/dashboard-cas.html', context)
+
+def cas_build_pie_chart(request):
+    if request.is_ajax():
+        if request.method == 'POST':
+            # print(request.POST)
+            escale = request.POST.get('escale')
+            act = request.POST.get('activite') 
+            if request.POST.get('escale') == '':
+                escale = 'ALG'
+            qs = FLIGHT_ASSIST.objects.filter(montant_globale__isnull = False, escale = escale)
+            year = int(request.POST.get('year'))
+            qs = qs.filter(Q(act_dte_arr__year = year) | Q(date_cnl__year = year))
+            if request.POST.get('month') != "('', '---------')":
+                month = int(request.POST.get('month'))
+                qs = qs.filter(Q(act_dte_arr__month = month) | Q(date_cnl__month = month))
+            else:
+                month = None
+            if act == 'all':
+                comps = COMP_DISPATCHER.objects.all().values_list('company_dispatcher', flat=True).distinct()
+            elif act == 'occas':
+                comps = COMP_DISPATCHER.objects.filter(activite = 'OCCASIONNEL').values_list('company_dispatcher', flat=True).distinct()
+            else:
+                comps = COMP_DISPATCHER.objects.filter(activite = 'CONTRACTUEL').values_list('company_dispatcher', flat=True).distinct()
+            comps = list(comps)
+            qs_montant = []
+            for company in comps:
+                subqs = qs.filter(compagnie_dispatcher = company).aggregate(Sum('montant_globale')).get('montant_globale__sum')
+                if subqs is not None:
+                    subqs = round(subqs, 2)
+                    qs_montant.append({company:subqs})
+            qs_montant = sorted(qs_montant, key=lambda k: list(k.values()), reverse=True) 
+            if len(qs_montant) > 10:
+                qs_montant = qs_montant[:10]
+            ctx = refresh_template_cxt(request, year, month)
+            data = {
+                'exist': True,
+                'title': 'Montant par compagnie - Escale : ' + escale + ' ( Top 10 )',
+                'data': qs_montant
+            }
+            data.update(ctx)
+            return JsonResponse(data, safe=False)
+
 def build_chart(request):
     if request.is_ajax():
         if request.method == 'POST':
-            if request.POST.get('compagnie_dispatcher') == '' and request.POST.get('escale') == '':
-                get = False
-                data = {
-                    'exist': get
-                }
-                return JsonResponse(data)
+            # print(request.POST)
             qs = FLIGHT_ASSIST.objects.filter(montant_globale__isnull = False)
-            comp = False
-            esc = False
-            comp_all = False
-            title = ''
-            title_comp = ''
-            title_esc = ''
-            title_time = ''
-            if request.POST.get('compagnie_dispatcher') != '':
-                comp = True
-                if request.POST.get('compagnie_dispatcher') != 'TOUTES':
-                    qs = qs.filter(compagnie_dispatcher = request.POST.get('compagnie_dispatcher'))
-                    title_comp = 'PAR ' + request.POST.get('compagnie_dispatcher')
+            year = int(request.POST.get('year'))
+            qs = qs.filter(Q(act_dte_arr__year = year) | Q(date_cnl__year = year))
+            if request.POST.get('month') != "('', '---------')":
+                month = int(request.POST.get('month'))
+                qs = qs.filter(Q(act_dte_arr__month = month) | Q(date_cnl__month = month))
+            else:
+                month = None
+            if request.POST.get('orient') == 'comp':
+                orient = 'compagnie'
+                if request.POST.get('activite') == 'all':
+                    comps = COMP_DISPATCHER.objects.all().values_list('company_dispatcher', flat=True).distinct()
+                elif request.POST.get('activite') == 'occas':
+                    orient += ' ( Vols occasionnels )'
+                    comps = COMP_DISPATCHER.objects.filter(activite = 'OCCASIONNEL').values_list('company_dispatcher', flat=True).distinct()
                 else:
-                    title_comp = 'PAR LES COMPAGNIES'
-                    esc = True
-                    comp = False
-            else:
-                title_comp = 'PAR COMPAGNIE'
-            if request.POST.get('escale') != '':
-                title_esc = ' - ESCALE : ' + request.POST.get('escale')
-                esc = True
-                qs = qs.filter(escale = request.POST.get('escale'))
-            else:
-                title_esc = ' - PAR ESCALE'
-            if request.POST.get('activite') == 'OCCASIONNEL':
-                comps = COMP_DISPATCHER.objects.filter(activite = 'OCCASIONNEL').values_list('company_dispatcher')
+                    orient += ' ( Vols réguliers )'
+                    comps = COMP_DISPATCHER.objects.filter(activite = 'CONTRACTUEL').values_list('company_dispatcher', flat=True).distinct()
+                comps = list(comps)
                 qs = qs.filter(compagnie_dispatcher__in = comps)
-                title_comp += ' ( OCCASIONNEL )'
-            elif request.POST.get('activite') == 'Régulier'.upper():
-                comps = COMP_DISPATCHER.objects.filter(activite = 'CONTRACTUEL').values_list('company_dispatcher')
-                qs = qs.filter(compagnie_dispatcher__in = comps)
-                title_comp += ' ( CONTRACTUEL )'
-            if request.POST.get('annee') != '':
-                qs = qs.filter(act_dte_arr__year = int(request.POST.get('annee')))
-                title_time = ' DURANT L\'ANNéE '.upper() + request.POST.get('annee')
-            if request.POST.get('mois') != '':
-                qs = qs.filter(act_dte_arr__month = int(request.POST.get('mois')))
-                title_time = ' DURANT LA PéRIODE '.upper() + request.POST.get('mois') + '/' + request.POST.get('annee')
-            qs_montant = []
-            if comp and not esc:
-                dictlist = []
-                dist_esc = qs.values_list('escale', flat=True).distinct()
-                dist_esc = list(dist_esc)
-                for escale in dist_esc:
-                    subqs = qs.filter(escale = escale).aggregate(Sum('montant_globale')).get('montant_globale__sum')
-                    qs_montant.append({escale:subqs})
-            elif esc:
-                dictlist = []
-                dist_comp = qs.values_list('compagnie_dispatcher', flat=True).distinct()
-                dist_comp = list(dist_comp)
-                for company in dist_comp:
+                qs_montant = []
+                for company in comps:
                     subqs = qs.filter(compagnie_dispatcher = company).aggregate(Sum('montant_globale')).get('montant_globale__sum')
-                    qs_montant.append({company:subqs})
-            print(qs_montant, type(qs_montant))
+                    if subqs is not None:
+                        subqs = round(subqs, 2)
+                        qs_montant.append({company:subqs})
+            else:
+                orient = 'escale'
+                escales = FLIGHT_ASSIST.objects.all().values_list('escale', flat=True).distinct()
+                qs_montant = []
+                for esc in escales:
+                    subqs = qs.filter(escale = esc).aggregate(Sum('montant_globale')).get('montant_globale__sum')
+                    if subqs is not None:
+                        subqs = round(subqs, 2)
+                        qs_montant.append({esc:subqs})
+            # REFRESH TEMPLATE
+            ctx = refresh_template_cxt(request, year, month)
             data = {
                 'exist': True,
-                'title': 'MONTANT PAYéS ( USD ) '.upper() + title_comp + title_time + title_esc,
+                'title': 'Montant par ' + orient,
                 'data': qs_montant
             }
+            data.update(ctx)
             return JsonResponse(data, safe=False)
+
+def month_name(month_number):
+    return calendar.month_name[month_number]
+
+def cas_build_time_chart(request):
+    months = []
+    for month in range(1, 13):
+        months.append(month)
+    today = datetime.datetime.now().date()
+    year_ago_date = today - datetime.timedelta(days=365)
+    qs = FLIGHT_ASSIST.objects.filter(montant_globale__isnull = False)
+    qs_bas = qs.filter(Q(act_dte_arr__gte = year_ago_date) | Q(date_cnl__gte = year_ago_date))
+    print(qs.count())
+    res = []
+    year_ago_copy = year_ago_date
+    while year_ago_copy <= today:
+        qs = qs_bas.filter(Q(act_dte_arr__year = year_ago_copy.year) | Q(date_cnl__year = year_ago_copy.year))
+        qs = qs.filter(Q(act_dte_arr__month = year_ago_copy.month) | Q(date_cnl__month = year_ago_copy.month))
+        if qs.count() == 0:
+            sum_mont = 0
+        else:
+            sum_mont = qs.aggregate(Sum('montant_globale')).get('montant_globale__sum')
+        res.append({month_name(year_ago_copy.month)[:3].upper() + ' ' + str(year_ago_copy.year):round(sum_mont, 2)})
+        year_ago_copy += pd.DateOffset(months = 1)
+    data = {
+        'exist': True,
+        'res': res
+    }
+    return JsonResponse(data, safe=False)
+
+# cas_build_time_chart()
 
 class HistRegularFact(ListView):
     template_name = 'core/hist_regular_fact.html'

@@ -14,9 +14,7 @@
     {% endfor %}
 </div>
 {% endif %}
-{% if request.user.profile.poste == 'SOUS DIRECTEUR GESTION DES ESCALES' %}
-<p>Welcome {{request.user.first_name}} (SDGE) !</p>
-{% elif request.user.profile.dpt == 'DPT CONTRATS ET ASSISTANCE AU SOL' %}
+{% if request.user.profile.dpt == 'DPT CONTRATS ET ASSISTANCE AU SOL' or request.user.profile.poste == 'SOUS DIRECTEUR GESTION DES ESCALES' %}
 <a href="{% url 'core:add-occas-flight' %}" class="btn fixed-top btn-lg my-0 p float-right" style="color: white !important; background-color: #0e385b !important;">
     <b>Ajouter un vol</b>
 </a>

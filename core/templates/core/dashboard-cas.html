@@ -1,0 +1,556 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% load cart_template_tags %}
+
+{% block head_title %}
+Stats
+{% endblock head_title %}
+
+{% block content %}
+<script src="https://cdn.zingchart.com/zingchart.min.js"></script>
+
+<div id="message_err" class="mt-2 pb-0 pt-0" style="display: none;">
+    <div id="alert_err" class="alert alert-danger alert-dismissible fade show" role="alert">
+    </div>
+</div>
+
+<div class="column">
+    <div class="d-flex flex-column mb-3 col-12">
+        <div class="d-flex flex-row justify-content-between">
+            <div class="card shadow col-2 p-4 d-flex flex-column align-items-center" style="border-left: 7px #ffec18 solid;">
+                <p class="h4 mb-0 font-weight-bold current_year"> {{current_year}} </p>
+                <select class="custom-select col-6 mt-3 align-self-center" name="month" id="month">
+                    {% for month in months %}
+                    {% if month|get_type == "<class 'tuple'>" %}
+                        <option value="{{month}}">{{month.1}}</option>
+                    {% else %}
+                    <option value="{{month}}">{{month}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="card shadow col-3 p-4 d-flex flex-column align-items-center" style="border-left: 7px #0f39f6 solid;">
+                <p class="h5 mb-3 font-weight-bold">Montant réalisé &nbsp; - &nbsp; USD</p>
+                <div class="d-flex flex-row">
+                    <p class="h3 mb-0 mr-4 sum_mont" style="color: #0f39f6;"> {{sum_mont}}</p>
+                    <div class="d-flex flex-row align-items-center">
+                        {% if act == 'up' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#35e200" class="bi bi-caret-up-fill mr-2" viewBox="0 0 16 16">
+                            <path d="m7.247 4.86-4.796 5.481c-.566.647-.106 1.659.753 1.659h9.592a1 1 0 0 0 .753-1.659l-4.796-5.48a1 1 0 0 0-1.506 0z"/>
+                          </svg>
+                        <p class="mb-0 font-weight-bold perc" style="color: #35e200;"> {{perc}} % </p>
+                        {% elif act == 'down' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#e20000" class="bi bi-caret-down-fill mr-2" viewBox="0 0 16 16">
+                            <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                          </svg>
+                          <p class="mb-0 font-weight-bold perc" style="color: #e20000;"> - {{perc}} % </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow col-3 p-4 d-flex flex-column align-items-center" style="border-left: 7px #f65c0f solid;">
+                <p class="h5 mb-3 font-weight-bold">Montants prévus &nbsp; - &nbsp; USD</p>
+                <p class="h3 mb-0 sum_est" style="color: #f65c0f;"> {{sum_est}}</p>
+            </div>
+            <div class="card shadow col-3 p-4 d-flex flex-column align-items-center" style="border-left: 7px #05ba0e solid;">
+                <p class="h5 mb-3 font-weight-bold">Vols occasionnels - ( <span class="qs_occas">{{qs_occas}}</span> )</p>
+                <p class="h3 mb-0 sum_qs_occas" style="color: #05ba0e;">{{sum_qs_occas}}</p>
+            </div>
+        </div>
+    </div>
+    <div class="sliderWithLabels col-12" id="mySlider1"></div>
+    <!-- <input type="range" class="form-range" min="2020" max="{{current_year}}" id="customRange2" /> -->
+    <!-- <form method="GET" class="form col-12">
+        {% csrf_token %}
+        <div class="mt-2 form-row">
+            <div class="form-group col-md-2">
+                <label for="compagnie_dispatcher" class="col-form-label">COMPAGNIE</label>
+                <select class="custom-select chg" name="compagnie_dispatcher" id="compagnie_dispatcher" required>
+                    {% for p in companies %}
+                    {% if p|get_type == "<class 'tuple'>" %}
+                        <option value="{{p}}">{{p.1}}</option>
+                    {% else %}
+                    <option value="{{p}}">{{p}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="activite" class="col-form-label">ACTIVITÉ</label>
+                <select class="custom-select" name="activite" id="activite" disabled required>
+                    {% for act in acts %}
+                    {% if act|get_type == "<class 'tuple'>" %}
+                        <option value="{{act}}" selected>{{act.1}}</option>
+                    {% else %}
+                    <option value="{{act}}">{{act}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-2">
+                <label for="compagnie_dispatcher" class="col-form-label">ESCALE</label>
+                <select class="custom-select" name="escale" id="escale" required>
+                    {% for esc in escales %}
+                    {% if esc|get_type == "<class 'tuple'>" %}
+                        <option value="{{esc}}">{{esc.1}}</option>
+                    {% else %}
+                    <option value="{{esc.escale}}">{{esc.escale}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-3">
+                <label for="annee" class="col-form-label">ANNÉE</label>
+                <select class="custom-select" name="annee" id="annee" disabled required>
+                    {% for year in years %}
+                    {% if year|get_type == "<class 'tuple'>" %}
+                        <option value="{{year}}">{{year.1}}</option>
+                    {% else %}
+                    <option value="{{year}}">{{year}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-3">
+                <label for="mois" class="col-form-label">MOIS</label>
+                <select class="custom-select" name="mois" id="mois" disabled required>
+                    {% for month in months %}
+                    {% if month|get_type == "<class 'tuple'>" %}
+                        <option value="{{month}}">{{month.1}}</option>
+                    {% else %}
+                    <option value="{{month}}">{{month}}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form> -->
+    <div class="d-flex flex-row col-12 mt-4 px-0">
+        <div class="card shadow d-flex col-8 mr-3 flex-column">
+            <div class="d-flex flex-row" style="border-bottom: 1px #c0c0c0 solid ;">
+                <p id="cas_bar_chart" class="h6 px-0 py-3 mb-0 col-6"></p>
+                <select class="custom-select mr-2 col-3 align-self-center" name="bar_activite" id="bar_activite" style="display: none;">
+                    <option value="all" {% if activite == 'all' %} selected {% endif %} >PEU IMPORTE</option>
+                    <option value="contrat" {% if activite == 'contrat' %} selected {% endif %} >RÉGULIERS</option>
+                    <option value="occas" {% if activite == 'occas' %} selected {% endif %} >OCCASIONNELS</option>
+                </select>
+                <div class="form-check form-switch ml-auto mb-0 col-3 align-self-center">
+                    <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault"/>
+                    <label class="form-check-label" for="flexSwitchCheckDefault">
+                        Selon les compagnies
+                    </label>
+                  </div>
+            </div>
+            <div id="chart"></div>
+        </div>
+        <div class="card shadow d-flex ml-auto flex-column col-4">
+            <p id="ring_chart_title" class="h6 px-0 py-3 mb-0 col-12" style="border-bottom: 1px #c0c0c0 solid ;"></p>
+            <div id="pie-chart"></div>
+            <div class="row justify-content-center">
+                <select class="custom-select mb-3 mr-3 col-5 ring_chg" name="escale" id="escale" required>
+                    {% for esc in escales %}
+                    <option value="{{esc.escale}}" {% if esc.escale == escale %} selected {% endif %} >{{esc.full_name}}</option>
+                    {% endfor %}
+                </select>
+                <select class="custom-select mb-3 col-5 ring_chg" name="activite" id="activite" required>
+                    <option value="all" {% if activite == 'all' %} selected {% endif %} >PEU IMPORTE</option>
+                    <option value="contrat" {% if activite == 'contrat' %} selected {% endif %} >RÉGULIERS</option>
+                    <option value="occas" {% if activite == 'occas' %} selected {% endif %} >OCCASIONNELS</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex flex-row col-12 mt-4 px-0">
+        <div class="card shadow ml-auto d-flex flex-column col-10">
+            <p class="h6 py-3 mb-0 col-12" style="border-bottom: 1px #c0c0c0 solid ;">Montant réalisé par mois ( 12 derniers mois )</p>
+            <div id="time-chart"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    var time_state ={	
+        'items':[],
+        'values':[],
+    }
+
+    window.Kformat = function(num) {
+        return Math.abs(num) > 999 ? Math.sign(num)*((Math.abs(num)/1000).toFixed(1)) + ' K' : Math.sign(num)*Math.abs(num)
+    }
+
+    function buildTimeChart(type, title){
+        console.log(time_state.items)
+        console.log(time_state.values)
+        var chartData = {
+            "type":type,
+            "scale-x":{
+                labels: time_state.items,
+                itemsOverlap: true,
+                "max-items":20,
+                item: {
+                    fontAngle: -48,
+                    fontColor: '#9a9cab',
+                    fontFamily: 'Arial',
+                    fontSize: '10px',
+                    offsetX: '5px'
+                },
+            },
+            scaleY: {
+                format : 'Kformat()',
+                lineWidth: 0,
+                guide: {
+                    lineWidth: '1px',
+                    lineStyle: 'solid',
+                    lineColor: '#e3e3e3'
+                },
+            },
+            plot: {
+                // tooltipText: '%t: %v',
+                activeArea: true,
+                animation: {
+                delay: 500,
+                effect: 'ANIMATION_EXPAND_BOTTOM',
+                speed: 600
+                },
+                shadow: false
+            },
+            // "title": {
+            //     "text": title,
+            //     "font-color": "#7E7E7E",
+            //     "backgroundColor": "none",
+            //     "font-size": "22px",
+            //     "alpha": 1,
+            //     "adjust-layout": true,
+            // },
+            // preview: {
+            //     margin: '10px 50px 10px 50px',
+            //     height: '50px',
+            //     live: true,
+            //     "backgroundColor": "#e5eeff",
+            //     position: '50% 100%',
+            // },
+            "series":[
+                {
+                    "values":time_state.values
+                }
+            ]
+		}
+        zingchart.exec('time-chart', 'clear');
+		zingchart.render({
+		  id: "time-chart",
+		  data: chartData,
+		});
+    }
+
+    function CAS_Time_Chart(){
+        $.ajax({
+            method:'POST',
+            url:'{% url "core:cas-build-time-chart" %}',
+            datatype: 'JSON',
+            success:function(data){
+                // console.log(bar_state.items.length)
+                if(time_state.items.length > 0){
+                    time_state.items = []
+                    time_state.values = []
+                }
+                // console.log(data)
+                for (var i in data.res){
+                    var key = Object.keys(data.res[i])[0]
+                    var value = Object.values(data.res[i])[0]
+                    time_state.items.push(key)
+                    time_state.values.push(value)
+                }
+                if(data.exist){
+                    // $('.empty').hide()
+                    buildTimeChart("area", data.title)
+                }
+            }
+        });
+    }
+
+    CAS_Time_Chart();
+
+    function refresh_cards(data){
+        var current_year = data.current_year;
+        var sum_mont = data.sum_mont;
+        var act = data.act;
+        var perc = data.perc;
+        var sum_est = data.sum_est;
+        var qs_occas = data.qs_occas;
+        var sum_qs_occas = data.sum_qs_occas;
+        $('.current_year').text('').text(current_year)
+        $('.sum_mont').text('').text(sum_mont)
+        $('.sum_est').text('').text(sum_est)
+        $('.qs_occas').text('').text(qs_occas)
+        $('.sum_qs_occas').text('').text(sum_qs_occas)
+    }
+
+    var current_year = '{{current_year}}'
+    var years = []
+    for (let index = 2019; index < parseInt(current_year) + 1; index++){
+        years.push(index.toString())
+    }
+    // call setup slider passing in values
+    setupSlider('mySlider1', years, current_year);
+
+    // setup slider HTML, then call the following method with the values
+    function setupSlider(id, vals, initialVal) {
+  $(`#${id}`).append($('<div>').addClass('step-marks'));
+  $(`#${id}`).append($('<div>').addClass('step-labels'));
+  $(`#${id}`).append($('<input type="range">'));
+  
+  const min = 2019;
+  const max = current_year;
+
+  // initialise slider vals
+  $(`#${id} input[type=range]`)
+    .attr({ min: min, max: max })
+    .val(initialVal);
+
+  vals.forEach((x, i) => {
+    if (i < vals.length - 1) {
+      $(`#${id} .step-marks`).append($("<div>"));
+    }
+    const label = $("<span>").text(x).on('click', () => $(`#${id} input[type=range]`).val(i));    
+    $(`#${id} .step-labels`).append(label);
+  });
+
+  const length = vals.length;
+  const multiply = length / (length - 1);
+  const widthVal = `calc(100% * ${multiply} - 25px)`;
+  const marginVal = `calc(${widthVal} / ${length * -2} + 10px)`;
+  
+  $('.step-labels').addClass('d-flex justify-content-between')
+//   $(`#${id} .step-labels`).css("width", widthVal / 4);
+//   $(`#${id} .step-labels`).css("margin-left", marginVal);
+  $(`#${id}`).show();
+}
+
+    var state ={	
+        'items':[],
+        'values':[],
+        'labels':[],
+    }
+
+    var bar_state ={	
+        'items':[],
+        'values':[],
+        'labels':[],
+    }
+
+    function buildChart(type, title){
+        var chartData = {
+            "type":type,
+            "scale-x":{
+                "values":bar_state.items,
+                "zooming": true,
+                "zoom-to": [0, 10]
+            },
+            'scaleY': {
+                format : 'Kformat()',
+            },
+            // "title": {
+            //     "text": title,
+            //     "font-color": "#7E7E7E",
+            //     "backgroundColor": "none",
+            //     "font-size": "22px",
+            //     "alpha": 1,
+            //     "adjust-layout": true,
+            // },
+            "plot": {
+                "bars-space-left": 0.15,
+                "bars-space-right": 0.15,
+                "animation": {
+                    "effect": "ANIMATION_SLIDE_BOTTOM",
+                    "sequence": 0,
+                    "speed": 1000,
+                    "delay": 300
+                }
+            },
+            preview: {
+                live: true,
+                "backgroundColor": "#ffeda0",
+            },
+            "series":[
+                {
+                    "values":bar_state.values
+                }
+            ]
+		}
+        zingchart.exec('chart', 'clear');
+		zingchart.render({
+		  id: "chart",
+		  data: chartData,
+		});
+	}
+
+    data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+    'orient': 'esc',
+    'activite': 'all',
+    'month': $('#month').val(),
+    'year': $('#mySlider1 input').val()};
+    function CAS_Bar_Chart(){
+        $.ajax({
+            method:'POST',
+            url:'{% url "core:build-chart" %}',
+            datatype: 'JSON',
+            data: data,
+            success:function(data){
+                // console.log(bar_state.items.length)
+                if(bar_state.items.length > 0){
+                    bar_state.items = []
+                    bar_state.values = []
+                }
+                console.log(data)
+                for (var i in data.data){
+                    var key = Object.keys(data.data[i])[0]
+                    var value = Object.values(data.data[i])[0]
+                    bar_state.items.push(key)
+                    bar_state.values.push(value)
+                }
+                if(data.exist){
+                    // $('.empty').hide()
+                    $('#cas_bar_chart').text(data.title)
+                    refresh_cards(data)
+                    buildChart("bar", data.title)
+                }
+            }
+        });
+    }
+
+    CAS_Bar_Chart();
+
+    var orient = '';
+    $('#mySlider1 input, #month, #bar_activite, #flexSwitchCheckDefault').on('change', function(){
+        if($('#flexSwitchCheckDefault').is(':checked')){
+            $('#bar_activite').slideDown('slow')
+            orient = 'comp'
+        }
+        else{
+            $('#bar_activite').slideUp('slow')
+            orient = 'esc'
+        }
+        console.log(orient)
+        data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+        'orient': orient,
+        'activite': $('#bar_activite').val(),
+        'month': $('#month').val(),
+        'year': $('#mySlider1 input').val()};
+        CAS_Bar_Chart()
+    });
+
+    var styles= [ "#2675e4", "#f89900", "#e43737", "#19d532", "purple", "#919191", "#26e4ab", "brown", "black" ];
+
+    function buildRingChart(type, title){
+        // console.log(state)
+        ZC.LICENSE = ["569d52cefae586f634c54f86dc99e6a9", "b55b025e438fa8a98e32482b5f768ff5"];
+        var chartData = {
+            "type":type,
+            plot: {
+                valueBox: [{
+                    type: 'all',
+                    text: '%npv%',
+                    placement: 'in',
+                        'font-size': 12,
+                    },
+                    // {
+                    //     type: 'all',
+                    //     text: '%t',
+                    //     placement: 'in',
+                    //     'font-size': 12
+                    // }
+                ],
+                animation: {
+                    effect: 'ANIMATION_EXPAND_VERTICAL',
+                    sequence: 'ANIMATION_BY_PLOT_AND_NODE'
+                },
+                backgroundColor: '#FBFCFE',
+                borderWidth: '0px',
+                hoverState: {
+                    cursor: 'hand',
+                },
+            },
+            "plotarea": {
+                "margin-right": "10%",
+            },
+            "series":state.values,
+            legend: {
+                position: "50%",
+                borderColor: "transparent",
+                align: 'right',
+                'font-size': 8,
+                marker: {
+                    borderRadius: 10,
+                    borderColor: "transparent"
+                }
+            },
+        }
+        // console.log(chartData.series);
+        zingchart.exec('pie-chart', 'clear');
+		zingchart.render({
+		  id: "pie-chart",
+          data: chartData,
+          height: 400,
+		});
+	}
+
+    data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+    'escale': $('#escale').val(),
+    'activite': $('#activite').val(),
+    'month': $('#month').val(),
+    'year': $('#mySlider1 input').val()};
+
+    function CAS_Ring_Chart(){
+        $.ajax({
+        method:'POST',
+        url:'{% url "core:cas-build-pie-chart" %}',
+        datatype: 'JSON',
+        data: data,
+        success:function(data){
+            // console.log(state.items.length)
+            if(state.values.length > 0){
+                state.items = []
+                state.values = []
+            }
+            // console.log(data)
+            for (var i in data.data){
+                var key = Object.keys(data.data[i])[0]
+                var value = Object.values(data.data[i])[0]
+                // state.items.push(key)
+                state.values.push({
+                    text:key,
+                    lineWidth: '1px',
+                    values:[value],
+                    backgroundColor: styles[i]
+                })
+            }
+            $('#ring_chart_title').text(data.title)
+            // console.log(state.values)
+            if(data.exist){
+                // $('.empty').hide()
+                refresh_cards(data)
+                buildRingChart("ring", data.title)
+            }
+        }
+    });
+    };
+
+    CAS_Ring_Chart();
+
+    $('#mySlider1 input, #month, .ring_chg').on('change', function(){
+        console.log($('#month').val())
+        // console.log($('#escale').val())
+        data = {'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+        'escale': $('#escale').val(),
+        'activite': $('#activite').val(),
+        'month': $('#month').val(),
+        'year': $('#mySlider1 input').val()};
+        CAS_Ring_Chart();
+    });
+
+</script>
+
+
+
+{% endblock content %}

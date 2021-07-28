@@ -54,6 +54,9 @@ from .views import (
     ExchangeRates,
     validExchRate,
     fact_regular_bill,
+    Dash,
+    cas_build_pie_chart,
+    cas_build_time_chart,
 )
 
 app_name = 'core'
@@ -100,6 +103,7 @@ urlpatterns = [
     path('fact-regular/', FactRegular.as_view(), name = 'fact-regular'),
     path('valid-company-fact/', valid_company_fact, name = 'valid-company-fact'),
     path('dashboard/', dashboard, name = 'dashboard'),
+    path('dashboard-cas/', Dash, name = 'dashboard-cas'),
     path('dashboard/build-chart/', build_chart, name = 'build-chart'),
     path('fact-regular/hist-regular-fact/', HistRegularFact.as_view(), name = 'hist-regular-fact'),
     path('valid-fact-regular/', validFactRegular.as_view(), name = 'valid-fact-regular'),
@@ -115,6 +119,7 @@ urlpatterns = [
     path('bag-case/<pk>/historique-des-propositions/', HistIndemn.as_view(), name = 'historique-des-propositions'),
     path('exchange-rates/', ExchangeRates.as_view(), name = 'exchange-rates'),
     path('valid-exchange-rate/', validExchRate.as_view(), name = 'valid-exchange-rate'),
-    path('fact-regular-bill/<int:id>/', fact_regular_bill.as_view(), name = 'fact-regular-bill')
-
+    path('fact-regular-bill/<int:id>/', fact_regular_bill.as_view(), name = 'fact-regular-bill'),
+    path('cas-build-pie-chart/', cas_build_pie_chart, name = 'cas-build-pie-chart'),
+    path('cas-build-time-chart/', cas_build_time_chart, name = 'cas-build-time-chart'),
 ]

@@ -786,7 +786,45 @@ table td, table th{
         border-radius: 10px;
         background-color: #e0e0e0 !important;
       }
+      
+      #mySlider1 > input[type=range]{
+        width: 100% !important;
+        cursor: pointer;
+        background-color: #0080ff !important;
+      }
 
+      /* .step-labels{
+        display: flex;
+  justify-content: space-between;
+  padding: 0 10px;
+      } */
+
+      .step-labels > span {
+        color: #444;
+        margin: 0px;
+        text-align: center;
+        font-size: 15px;
+        /* flex: 1; */
+        font-family: sans-serif;
+      }
+
+      .step-labels {
+        top: -10px;
+      }
+
+      #mySlider1 > div {
+        display: flex;
+        align-items: stretch;
+        height: 20px;
+        margin-top: -6px;
+        position: relative;
+        width: 100%;
+      }
+
+      .step-marks {
+        width: calc(100% - 20px) !important;
+        margin-left: 10px;
+      }
       
     
 /* END PROFILE PAGE */

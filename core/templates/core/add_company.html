@@ -882,12 +882,18 @@ Nouveau vol
         $('#solde_div').slideDown();
         $('#solde_date_div').slideDown();
         $('#fact').slideUp('slow');
-        document.getElementById('solde_date').setAttribute('required', true)
+        $('#fact').find('.form-control').each(function(){
+            $(this).prop('required', false)
+        });
+        document.getElementById('solde_date').setAttribute('required', false)
         document.getElementById('solde').setAttribute('required', true)
     }
     else if(poste.value=='CONTRACTUEL'){
         document.getElementById('solde').removeAttribute('required');
         document.getElementById('solde_date').removeAttribute('required');
+        $('#fact').find('.form-control').each(function(){
+            $(this).prop('required', true)
+        });
         $('#solde_div').slideUp();
         $('#solde_date_div').slideUp();
         $('#fact').slideDown('slow');

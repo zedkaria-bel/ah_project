@@ -25,6 +25,16 @@
             <a class="nav-link" style="color: white !important;" href="{% url 'core:home-view' %}">Acceuil <span class="sr-only">(current)</span></a>
           </div>
         </li>
+        {% if request.user.profile.poste == 'SOUS DIRECTEUR GESTION DES ESCALES' %}
+        <li class="nav-item ml-4">
+          <div class="d-flex flex-row d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#d2d2d2" class="bi bi-graph-up" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/>
+            </svg>
+            <a class="nav-link" style="color: white !important;" href="{% url 'core:dashboard-cas' %}">Data Analytics<span class="sr-only">(current)</span></a>
+          </div>
+        </li>
+        {% endif %}
         <!-- {% if request.user.profile.dpt == 'DPT RECHERCHES ET INDEMNISATION DES BAGAGES' %}
         <li class="nav-item active ml-4">
           <div class="d-flex flex-row d-flex align-items-center">
@@ -35,21 +45,13 @@
           </div>
         </li>
         {% endif %} -->
-        {% if request.user.profile.dpt == 'DPT CONTRATS ET ASSISTANCE AU SOL' %}
+        {% if request.user.profile.dpt == 'DPT CONTRATS ET ASSISTANCE AU SOL' or request.user.profile.poste == 'SOUS DIRECTEUR GESTION DES ESCALES'%}
         <li class="nav-item ml-4">
           <div class="d-flex flex-row d-flex align-items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#d2d2d2" class="bi bi-credit-card-2-back-fill" viewBox="0 0 16 16">
               <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5H0V4zm11.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-2zM0 11v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1H0z"/>
             </svg>
             <a class="nav-link" style="color: white !important;" href="{% url 'core:fact-regular' %}">Facturation<span class="sr-only">(current)</span></a>
-          </div>
-        </li>
-        <li class="nav-item ml-4">
-          <div class="d-flex flex-row d-flex align-items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="#d2d2d2" class="bi bi-graph-up" viewBox="0 0 16 16">
-              <path fill-rule="evenodd" d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5z"/>
-            </svg>
-            <a class="nav-link" style="color: white !important;" href="{% url 'core:dashboard' %}">Statistiques<span class="sr-only">(current)</span></a>
           </div>
         </li>
         <li class="nav-item ml-4">

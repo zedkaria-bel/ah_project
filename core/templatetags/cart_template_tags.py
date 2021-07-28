@@ -181,3 +181,12 @@ def days_until(dte_end):
 @register.filter
 def get_str_id(obj):
     return str(obj.auto_id)
+
+@register.filter
+def number_format(value_int):
+    if value_int >= 1000000:
+            value = "%.0f%s" % (value_int/1000000.00, ' M')
+    else:
+        if value_int >= 1000:
+            value = "%.0f%s" % (value_int/1000.0, ' K')
+    return value

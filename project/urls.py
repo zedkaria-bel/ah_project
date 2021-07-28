@@ -22,6 +22,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls', namespace='core')),
     path('accounts/', include('allauth.urls')),
+    path('django_plotly_dash/', include('django_plotly_dash.urls')),
 ]
 
 if settings.DEBUG:

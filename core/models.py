@@ -268,8 +268,6 @@ class COMP_DISPATCHER(models.Model):
         return self.company_dispatcher
     
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.company_dispatcher.lower().replace(' ', ''))
-        print(self.solde_estimee)
         #this line below save every fields of the model instance
         super(COMP_DISPATCHER, self).save(*args, **kwargs)
     
